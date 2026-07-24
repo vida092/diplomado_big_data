@@ -85,7 +85,7 @@
 
         <!-- Zona donde el alumno espera tu intervención -->
         <div id="zona-espera" class="zona-espera">
-            <h3 style="color: #d84315;">⏳ Nodo Inactivo (Idle)</h3>
+            <h3 style="color: #d84315;"> Nodo Inactivo (Idle)</h3>
             <p>Esperando a que el Coordinador asigne el bloque de memoria...</p>
             <input type="number" id="pin-coordinador" placeholder="PIN del Master" style="width: 200px;">
             <br>
@@ -94,7 +94,7 @@
 
         <!-- Zona de procesamiento matemático -->
         <div id="pantalla-tarea" class="pantalla-tarea">
-            <h3 style="color: #2e7d32;">⚙️ Procesando...</h3>
+            <h3 style="color: #2e7d32;"> Procesando...</h3>
             <div class="operacion" id="operacion-texto"></div>
             <input type="number" id="respuesta" placeholder="?">
             <button class="btn btn-resolver" onclick="verificarRespuesta()">Entregar al Coordinador</button>
@@ -140,7 +140,7 @@
                 document.getElementById('zona-espera').style.display = 'none';
                 generarOperacion(tipoTareaActual);
             } else {
-                alert("❌ PIN Incorrecto. Solo el Master puede autorizar.");
+                alert(" PIN Incorrecto. Solo el Master puede autorizar.");
             }
         }
 
@@ -179,7 +179,7 @@
                 document.getElementById('btn-ligero').disabled = false;
                 document.getElementById('btn-pesado').disabled = false;
             } else {
-                alert('❌ Error de cálculo. La CPU se equivocó, vuelve a intentarlo.');
+                alert(' Error de cálculo. La CPU se equivocó, vuelve a intentarlo.');
                 document.getElementById('respuesta').value = '';
                 document.getElementById('respuesta').focus();
             }
