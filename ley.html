@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador - Ley de Amdahl</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        h2 { text-align: center; color: #2c3e50; }
+        .control-group {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+        label { font-weight: bold; display: block; margin-bottom: 10px; }
+        input[type=range] { width: 100%; cursor: pointer; }
+        .valor { color: #007bff; font-weight: bold; font-size: 1.2rem; }
+        
+        /* Contenedor de la visualización de tiempo */
+        .grafico-tiempo {
+            margin: 30px 0;
+        }
+        .barra-base {
+            width: 100%;
+            height: 40px;
+            background: #ddd;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+        }
+        .segmento-secuencial {
+            background: #e74c3c; /* Rojo */
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: width 0.3s ease;
+        }
+        .segmento-paralelo {
+            background: #3498db; /* Azul */
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: width 0.3s ease;
+        }
+        
+        .resultados {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+        .metrica { text-align: center; }
+        .metrica-valor { font-size: 2.5rem; font-weight: bold; color: #2ecc71; }
+        .limite { font-size: 1.2rem; color: #e74c3c; }
+        
+        .leyenda {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Visualizador Dinámico: Ley de Amdahl</h2>
+        
+        <div class="control-group">
+            <label>1. Proporción de código paralelizable (P): <span id="val-p" class="valor">50%</span></label>
+            <input type="range" id="slider-p" min="0" max="100" value="50" step="1">
+            <small style="color: #666;">El resto del código (1 - P) es estrictamente secuencial y no puede dividirse.</small>
+        </div>
+
+        <div class="control-group">
+            <label>2. Número de Nodos / Núcleos (N): <span id="val-n" class="valor">1</span></label>
+            <input type="range" id="slider-n" min="1" max="1024" value="1" step="1">
+        </div>
+
+        <div class="grafico-tiempo">
+            <div class="leyenda">
+                <span><span class="dot" style="background:#e74c3c;"></span> Cuello de botella secuencial (1-P)</span>
+                <span><span class="dot" style="background:#3498db;"></span> Tiempo de cómputo paralelo (P/N)</span>
+            </div>
+            
+            <h4 style="text-align:center; margin-bottom: 5px;">Tiempo total de ejecución</h4>
+            <div class="barra-base" id="barra-tiempo">
+                <div id="seg-secuencial" class="segmento-secuencial"></div>
+                <div id="seg-paralelo" class="segmento-paralelo"></div>
+            </div>
+        </div>
+
+        <div class="resultados">
+            <div class="metrica">
+                <div>Aceleramiento (Speedup)</div>
+                <div class="metrica-valor" id="speedup-val">1.00x</div>
+            </div>
+            <div class="metrica">
+                <div>Límite teórico asintótico (N = ∞)</div>
+                <div class="metrica-valor limite" id="limite-val">2.00x</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sliderP = document.getElementById('slider-p');
+        const sliderN = document.getElementById('slider-n');
+        const valP = document.getElementById('val-p');
+        const valN = document.getElementById('val-n');
+        
+        const segSecuencial = document.getElementById('seg-secuencial');
+        const segParalelo = document.getElementById('seg-paralelo');
+        
+        const textSpeedup = document.getElementById('speedup-val');
+        const textLimite = document.getElementById('limite-val');
+
+        function actualizarVisualizacion() {
+            // P es el porcentaje paralelizable (0 a 1)
+            const pReal = parseInt(sliderP.value) / 100;
+            // Fracción secuencial
+            const sReal = 1 - pReal; 
+            // N es el número de núcleos
+            const n = parseInt(sliderN.value);
+
+            // Actualizar etiquetas numéricas
+            valP.innerText = `${(pReal * 100).toFixed(0)}%`;
+            valN.innerText = n;
+
+            // FÓRMULA DE AMDAHL
+            // Speedup = 1 / ((1 - P) + (P / N))
+            const tiempoSecuencial = sReal;
+            const tiempoParalelo = pReal / n;
+            const tiempoTotal = tiempoSecuencial + tiempoParalelo;
+            
+            const speedup = 1 / tiempoTotal;
+            
+            // Límite teórico (cuando N tiende a infinito, P/N tiende a 0)
+            const limiteMaximo = sReal === 0 ? "∞" : (1 / sReal).toFixed(2) + "x";
+
+            // Actualizar textos
+            textSpeedup.innerText = speedup.toFixed(2) + "x";
+            textLimite.innerText = limiteMaximo;
+
+            // Para la visualización, el 100% del ancho representa el tiempo original (Speedup = 1)
+            // Si el tiempo total disminuye, la barra ocupará menos del 100% del contenedor.
+            const anchoSecuencial = (tiempoSecuencial) * 100;
+            const anchoParalelo = (tiempoParalelo) * 100;
+
+            segSecuencial.style.width = `${anchoSecuencial}%`;
+            segParalelo.style.width = `${anchoParalelo}%`;
+
+            // Mostrar u ocultar texto dentro de las barras si son muy pequeñas
+            segSecuencial.innerHTML = anchoSecuencial > 5 ? `${(sReal*100).toFixed(0)}% Fijo` : '';
+            segParalelo.innerHTML = anchoParalelo > 5 ? `Paralelo` : '';
+        }
+
+        // Event listeners
+        sliderP.addEventListener('input', actualizarVisualizacion);
+        sliderN.addEventListener('input', actualizarVisualizacion);
+
+        // Inicializar
+        actualizarVisualizacion();
+    </script>
+</body>
+</html>
