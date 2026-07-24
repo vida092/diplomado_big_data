@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Nodo - Big Data</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-ligero { background: #4CAF50; color: white; }
+        .btn-pesado { background: #E91E63; color: white; }
+        .btn-resolver { background: #2196F3; color: white; width: 100%; margin-top: 15px;}
+        .btn-pin { background: #ff9800; color: white; margin-top: 10px; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        
+        /* Secciones ocultas por defecto */
+        #zona-espera, #pantalla-tarea, #resultados-tiempo { display: none; }
+        
+        .zona-espera {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff3e0;
+            border-radius: 8px;
+            border: 2px dashed #ff9800;
+        }
+        .pantalla-tarea {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+        .operacion { font-size: 2.5rem; font-weight: bold; margin: 15px 0; }
+        input[type="number"] {
+            font-size: 1.5rem;
+            width: 150px;
+            text-align: center;
+            padding: 5px;
+        }
+        .metricas {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            text-align: left;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Simulador de Nodo de Cómputo</h2>
+        <p>Selecciona el tipo de carga a procesar:</p>
+        
+        <div>
+            <button class="btn btn-ligero" onclick="iniciarPeticion('ligero')" id="btn-ligero">1. Pedir Tarea Ligera</button>
+            <button class="btn btn-pesado" onclick="iniciarPeticion('pesado')" id="btn-pesado">2. Pedir Tarea Pesada</button>
+        </div>
+
+        <!-- Zona donde el alumno espera tu intervención -->
+        <div id="zona-espera" class="zona-espera">
+            <h3 style="color: #d84315;">⏳ Nodo Inactivo (Idle)</h3>
+            <p>Esperando a que el Coordinador asigne el bloque de memoria...</p>
+            <input type="number" id="pin-coordinador" placeholder="PIN del Master" style="width: 200px;">
+            <br>
+            <button class="btn btn-pin" onclick="desbloquearTarea()">Autorizar Carga</button>
+        </div>
+
+        <!-- Zona de procesamiento matemático -->
+        <div id="pantalla-tarea" class="pantalla-tarea">
+            <h3 style="color: #2e7d32;">⚙️ Procesando...</h3>
+            <div class="operacion" id="operacion-texto"></div>
+            <input type="number" id="respuesta" placeholder="?">
+            <button class="btn btn-resolver" onclick="verificarRespuesta()">Entregar al Coordinador</button>
+        </div>
+
+        <!-- Resultados de la métrica de tiempos -->
+        <div id="resultados-tiempo" class="metricas"></div>
+    </div>
+
+    <script>
+        const PIN_SECRETO = "0000"; // ¡Tú te sabes este PIN!
+        let tipoTareaActual = '';
+        let respuestaCorrecta = 0;
+        
+        // Variables para los cronómetros
+        let tiempoInicioEspera = 0;
+        let tiempoFinEspera = 0;
+        let tiempoInicioCalculo = 0;
+
+        function iniciarPeticion(tipo) {
+            tipoTareaActual = tipo;
+            document.getElementById('btn-ligero').disabled = true;
+            document.getElementById('btn-pesado').disabled = true;
+            document.getElementById('resultados-tiempo').style.display = 'none';
+            
+            // Inicia el cronómetro de espera
+            tiempoInicioEspera = Date.now();
+            
+            // Mostrar zona de bloqueo
+            document.getElementById('zona-espera').style.display = 'block';
+            document.getElementById('pin-coordinador').value = '';
+            document.getElementById('pin-coordinador').focus();
+        }
+
+        function desbloquearTarea() {
+            const pinIngresado = document.getElementById('pin-coordinador').value;
+            
+            if (pinIngresado === PIN_SECRETO) {
+                // Detener cronómetro de espera y arrancar el de cálculo
+                tiempoFinEspera = Date.now();
+                tiempoInicioCalculo = Date.now();
+                
+                document.getElementById('zona-espera').style.display = 'none';
+                generarOperacion(tipoTareaActual);
+            } else {
+                alert("❌ PIN Incorrecto. Solo el Master puede autorizar.");
+            }
+        }
+
+        function generarOperacion(tipo) {
+            let num1, num2;
+            
+            if (tipo === 'ligero') {
+                num1 = Math.floor(Math.random() * 9) + 1; // 1 cifra
+                num2 = Math.floor(Math.random() * 9) + 1; // 1 cifra
+            } else {
+                num1 = Math.floor(Math.random() * 900) + 100; // 3 cifras
+                num2 = Math.floor(Math.random() * 90) + 10;   // 2 cifras
+            }
+
+            respuestaCorrecta = num1 * num2;
+            document.getElementById('operacion-texto').innerText = `${num1} × ${num2}`;
+            document.getElementById('pantalla-tarea').style.display = 'block';
+            document.getElementById('respuesta').value = '';
+            document.getElementById('respuesta').focus();
+        }
+
+        function verificarRespuesta() {
+            const respuestaUsuario = parseInt(document.getElementById('respuesta').value);
+            
+            if (respuestaUsuario === respuestaCorrecta) {
+                const tiempoFinCalculo = Date.now();
+                
+                // Calcular métricas en segundos
+                const segundosEspera = ((tiempoFinEspera - tiempoInicioEspera) / 1000).toFixed(1);
+                const segundosCalculo = ((tiempoFinCalculo - tiempoInicioCalculo) / 1000).toFixed(1);
+                
+                mostrarMetricas(segundosEspera, segundosCalculo);
+                
+                // Reiniciar UI
+                document.getElementById('pantalla-tarea').style.display = 'none';
+                document.getElementById('btn-ligero').disabled = false;
+                document.getElementById('btn-pesado').disabled = false;
+            } else {
+                alert('❌ Error de cálculo. La CPU se equivocó, vuelve a intentarlo.');
+                document.getElementById('respuesta').value = '';
+                document.getElementById('respuesta').focus();
+            }
+        }
+
+        function mostrarMetricas(espera, calculo) {
+            const div = document.getElementById('resultados-tiempo');
+            div.style.display = 'block';
+            
+            // Determinar si fue eficiente o no
+            const proporcion = (calculo / espera).toFixed(2);
+            let diagnostico = "";
+            
+            if (parseFloat(calculo) < parseFloat(espera)) {
+                diagnostico = " INEFICIENTE: Pasaste más tiempo comunicándote que procesando (Overhead-bound).";
+                div.style.backgroundColor = "#ffebee"; // Rojo claro
+            } else {
+                diagnostico = " EFICIENTE: La mayor parte del tiempo se usó en procesamiento real (CPU-bound).";
+                div.style.backgroundColor = "#e8f5e9"; // Verde claro
+            }
+
+            div.innerHTML = `
+                <strong>Reporte del Nodo:</strong><br><br>
+                 Tiempo en Red / Gestión: <strong>${espera} s</strong><br>
+                 Tiempo de Procesamiento: <strong>${calculo} s</strong><br>
+                <hr style="border: 1px solid #ccc;">
+                <em>${diagnostico}</em>
+            `;
+        }
+    </script>
+</body>
+</html>
