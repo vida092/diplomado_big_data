@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Interactivo de Big Data & Spark</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen p-6">
+
+    <div class="max-w-6xl mx-auto space-y-8">
+        <!-- Encabezado -->
+        <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-indigo-400">Laboratorio Visual de Big Data</h1>
+                <p class="text-sm text-slate-400">Demostraciones interactivas para entender transformaciones y joins distribuidos.</p>
+            </div>
+            <!-- Pestañas de navegación -->
+            <div class="flex space-x-2 bg-slate-900 p-1 rounded-lg border border-slate-800">
+                <button onclick="cambiarTab('transf')" id="btn-transf" class="px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white transition">Operaciones Básicas</button>
+                <button onclick="cambiarTab('join')" id="btn-join" class="px-4 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-white transition">Broadcast vs Shuffle Join</button>
+            </div>
+        </header>
+
+        <!-- SECCIÓN 1: OPERACIONES BÁSICAS (SELECT, DROP, FILTER, ORDER BY) -->
+        <section id="sec-transf" class="space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                <h2 class="text-lg font-semibold text-slate-200 mb-2">Simulador de DataFrame (Transformaciones)</h2>
+                <p class="text-sm text-slate-400 mb-6">Selecciona una operación de PySpark para ver cómo transforma el conjunto de datos original fila por fila.</p>
+
+                <!-- Botones de operaciones -->
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <button onclick="ejecutarOp('select')" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded-lg text-sm font-mono transition">.select("id", "nombre")</button>
+                    <button onclick="ejecutarOp('filter')" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded-lg text-sm font-mono transition">.filter(edad > 25)</button>
+                    <button onclick="ejecutarOp('drop')" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded-lg text-sm font-mono transition">.drop("salario")</button>
+                    <button onclick="ejecutarOp('orderby')" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded-lg text-sm font-mono transition">.orderBy(edad.desc())</button>
+                    <button onclick="ejecutarOp('reset')" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-400 transition">Reiniciar</button>
+                </div>
+
+                <!-- Contenedor de tablas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">DataFrame Original</h3>
+                        <div id="tabla-origen" class="overflow-x-auto border border-slate-800 rounded-lg bg-slate-950"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-2">DataFrame Transformado (Resultado)</h3>
+                        <div id="tabla-resultado" class="overflow-x-auto border border-indigo-900/50 rounded-lg bg-indigo-950/20"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: BROADCAST VS STANDARD JOIN -->
+        <section id="sec-join" class="space-y-6 hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                <h2 class="text-lg font-semibold text-slate-200 mb-2">Mecanismo de Joins en Clústeres</h2>
+                <p class="text-sm text-slate-400 mb-6">Compara el tráfico de red generado por un Shuffle Join tradicional frente a un Broadcast Join.</p>
+
+                <!-- Controles -->
+                <div class="flex gap-4 mb-6">
+                    <button onclick="ejecutarJoin('standard')" class="px-5 py-2.5 bg-rose-900/40 hover:bg-rose-900 border border-rose-700 rounded-lg text-sm font-medium text-rose-200 transition">Ejecutar Standard Join (Shuffle)</button>
+                    <button onclick="ejecutarJoin('broadcast')" class="px-5 py-2.5 bg-emerald-900/40 hover:bg-emerald-900 border border-emerald-700 rounded-lg text-sm font-medium text-emerald-200 transition">Ejecutar Broadcast Join</button>
+                </div>
+
+                <!-- Área de Simulación de Nodos -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-slate-950 border border-slate-800 rounded-xl p-6 min-h-[300px]">
+                    <!-- Driver / Origen -->
+                    <div class="flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800 pb-4 lg:pb-0 lg:pr-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Driver Node</span>
+                            <div class="mt-3 space-y-2">
+                                <div class="p-2 bg-slate-900 border border-slate-800 rounded text-xs">Tabla Grande (Hechos) [10M filas]</div>
+                                <div id="tabla-pequena-box" class="p-2 bg-indigo-950 border border-indigo-800 rounded text-xs text-indigo-200">Tabla Pequeña (Dimensión) [5 filas]</div>
+                            </div>
+                        </div>
+                        <div id="log-join" class="mt-4 p-3 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300 font-mono">Estado: Esperando acción...</div>
+                    </div>
+
+                    <!-- Ejecutores del Clúster -->
+                    <div class="lg:col-span-2 flex flex-col justify-center">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Worker Nodes (Ejecutores del Clúster)</span>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div id="nodo-1" class="p-4 bg-slate-900 border border-slate-800 rounded-lg text-center transition">
+                                <span class="text-xs font-bold text-slate-400">Nodo 1</span>
+                                <div class="text-xs text-slate-500 mt-2 datos-nodo">Partición A</div>
+                            </div>
+                            <div id="nodo-2" class="p-4 bg-slate-900 border border-slate-800 rounded-lg text-center transition">
+                                <span class="text-xs font-bold text-slate-400">Nodo 2</span>
+                                <div class="text-xs text-slate-500 mt-2 datos-nodo">Partición B</div>
+                            </div>
+                            <div id="nodo-3" class="p-4 bg-slate-900 border border-slate-800 rounded-lg text-center transition">
+                                <span class="text-xs font-bold text-slate-400">Nodo 3</span>
+                                <div class="text-xs text-slate-500 mt-2 datos-nodo">Partición C</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Script con la lógica -->
+    <script src="js/app.js"></script>
+</body>
+</html>
