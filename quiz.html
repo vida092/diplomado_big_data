@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz · Divide y Vencerás · Sesiones 1–3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EAEEF3;
+    --surface:#FFFFFF;
+    --ink:#16202E;
+    --ink-soft:#5A6577;
+    --primary:#0B7A8C;
+    --primary-deep:#075D6B;
+    --amber:#E0912F;
+    --correct:#157A52;
+    --correct-bg:#E4F4EC;
+    --wrong:#C0392B;
+    --wrong-bg:#FBEAE7;
+    --line:#D8DFE8;
+    --code-bg:#141C28;
+    --code-ink:#E6EDF3;
+    --code-line:#2A3646;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(20,32,46,.04), 0 12px 32px rgba(20,32,46,.08);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(11,122,140,.10), transparent 60%),
+      radial-gradient(900px 500px at -5% 110%, rgba(224,145,47,.08), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    line-height:1.55;
+    min-height:100vh;
+    padding:clamp(16px,4vw,48px) clamp(14px,4vw,24px);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .shell{max-width:760px;margin:0 auto}
+
+  /* ---------- Cabecera ---------- */
+  .masthead{margin-bottom:22px}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--primary-deep);display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--amber);border-radius:2px}
+  .masthead h1{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;
+    font-size:clamp(1.7rem,5vw,2.5rem);line-height:1.05;letter-spacing:-.02em;
+    margin:.35em 0 .15em;
+  }
+  .masthead h1 .accent{color:var(--primary)}
+  .masthead p{color:var(--ink-soft);max-width:56ch;font-size:1rem}
+
+  /* ---------- Partition bar (firma) ---------- */
+  .partitions{display:flex;gap:5px;margin:20px 0 8px;flex-wrap:wrap}
+  .part{
+    height:9px;flex:1 1 14px;min-width:12px;border-radius:3px;
+    background:var(--line);transition:background .35s ease, transform .35s ease;
+  }
+  .part.correct{background:var(--correct)}
+  .part.wrong{background:var(--amber)}
+  .part.current{background:var(--primary);transform:scaleY(1.7)}
+  .parts-label{
+    font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink-soft);
+    display:flex;justify-content:space-between;letter-spacing:.02em;
+  }
+
+  /* ---------- Tarjeta ---------- */
+  .card{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:clamp(20px,4vw,34px);margin-top:16px;
+  }
+
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .tag{
+    font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:500;
+    letter-spacing:.04em;padding:4px 9px;border-radius:20px;text-transform:uppercase;
+  }
+  .tag.session{background:rgba(11,122,140,.10);color:var(--primary-deep)}
+  .tag.kind-code{background:rgba(224,145,47,.14);color:#9a5f14}
+  .tag.kind-concept{background:rgba(90,101,119,.12);color:var(--ink-soft)}
+
+  .qtext{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;
+    font-size:clamp(1.15rem,3vw,1.42rem);line-height:1.3;letter-spacing:-.01em;
+    margin-bottom:16px;
+  }
+
+  /* ---------- Bloque de código ---------- */
+  pre.code{
+    background:var(--code-bg);color:var(--code-ink);
+    font-family:'JetBrains Mono',monospace;font-size:.9rem;line-height:1.7;
+    padding:16px 18px;border-radius:10px;overflow-x:auto;margin-bottom:18px;
+    border:1px solid var(--code-line);
+    white-space:pre;
+  }
+  .blank{
+    display:inline-block;min-width:52px;text-align:center;
+    background:rgba(224,145,47,.20);color:#F4C67C;
+    border-bottom:2px dashed var(--amber);border-radius:4px;
+    padding:0 8px;font-weight:500;
+  }
+  .blank.filled{background:rgba(21,122,82,.22);color:#7CE0AD;border-bottom-color:var(--correct)}
+  .tok-kw{color:#7FD1E0}
+  .tok-str{color:#F4C67C}
+  .tok-com{color:#7A8697;font-style:italic}
+
+  /* ---------- Opciones ---------- */
+  .options{display:flex;flex-direction:column;gap:10px}
+  .opt{
+    display:flex;align-items:center;gap:13px;text-align:left;width:100%;
+    background:#FBFCFD;border:1.5px solid var(--line);border-radius:11px;
+    padding:13px 15px;cursor:pointer;font-family:inherit;font-size:.98rem;color:var(--ink);
+    transition:border-color .15s ease, background .15s ease, transform .08s ease;
+  }
+  .opt .marker{
+    flex:0 0 26px;height:26px;border-radius:7px;background:var(--surface);
+    border:1.5px solid var(--line);display:grid;place-items:center;
+    font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:500;color:var(--ink-soft);
+    transition:all .15s ease;
+  }
+  .opt .opt-text{flex:1}
+  .opt.code-opt .opt-text{font-family:'JetBrains Mono',monospace;font-size:.92rem}
+  .opt:not(:disabled):hover{border-color:var(--primary);background:#F5FAFB}
+  .opt:not(:disabled):hover .marker{border-color:var(--primary);color:var(--primary)}
+  .opt:not(:disabled):active{transform:translateY(1px)}
+  .opt:disabled{cursor:default}
+  .opt:focus-visible{outline:3px solid rgba(11,122,140,.35);outline-offset:2px}
+
+  .opt.is-correct{border-color:var(--correct);background:var(--correct-bg)}
+  .opt.is-correct .marker{background:var(--correct);border-color:var(--correct);color:#fff}
+  .opt.is-wrong{border-color:var(--wrong);background:var(--wrong-bg)}
+  .opt.is-wrong .marker{background:var(--wrong);border-color:var(--wrong);color:#fff}
+  .opt.dimmed{opacity:.55}
+
+  /* ---------- Feedback ---------- */
+  .feedback{margin-top:18px;border-radius:11px;padding:15px 17px;display:none;
+    border:1px solid var(--line);background:#F7F9FB;animation:rise .3s ease}
+  .feedback.show{display:block}
+  .feedback .fb-head{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.02rem;
+    display:flex;align-items:center;gap:8px;margin-bottom:5px;
+  }
+  .feedback.ok{background:var(--correct-bg);border-color:rgba(21,122,82,.3)}
+  .feedback.ok .fb-head{color:var(--correct)}
+  .feedback.no{background:var(--wrong-bg);border-color:rgba(192,57,43,.28)}
+  .feedback.no .fb-head{color:var(--wrong)}
+  .feedback .fb-body{color:var(--ink);font-size:.95rem}
+  .feedback .fb-body strong{color:var(--ink)}
+
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ---------- Pie de tarjeta ---------- */
+  .card-foot{display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:12px}
+  .counter{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--ink-soft)}
+
+  .btn{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.98rem;
+    padding:12px 24px;border-radius:10px;border:none;cursor:pointer;
+    transition:transform .08s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:3px solid rgba(11,122,140,.4);outline-offset:2px}
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(11,122,140,.28)}
+  .btn-primary:hover{background:var(--primary-deep)}
+  .btn-primary[disabled]{background:var(--line);color:var(--ink-soft);box-shadow:none;cursor:not-allowed}
+  .btn-ghost{background:transparent;color:var(--primary-deep);border:1.5px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--primary);background:#F5FAFB}
+
+  /* ---------- Inicio ---------- */
+  .intro-list{list-style:none;margin:18px 0 8px;display:grid;gap:10px}
+  .intro-list li{
+    display:flex;gap:11px;align-items:flex-start;color:var(--ink-soft);font-size:.95rem;
+  }
+  .intro-list li::before{
+    content:"";flex:0 0 8px;height:8px;margin-top:8px;border-radius:2px;background:var(--amber);
+  }
+  .intro-list li b{color:var(--ink);font-weight:600}
+  .start-actions{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .meta-line{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--ink-soft)}
+
+  /* ---------- Resultados ---------- */
+  .score-ring{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-bottom:6px}
+  .score-num{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(2.6rem,9vw,3.6rem);
+    line-height:1;color:var(--primary);letter-spacing:-.03em;
+  }
+  .score-num span{color:var(--ink-soft);font-size:1.3rem;font-weight:500}
+  .score-msg{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1.15rem;flex:1;min-width:200px}
+  .score-sub{color:var(--ink-soft);font-size:.95rem;margin-top:2px;font-family:'Inter',sans-serif;font-weight:400}
+
+  .review{margin-top:24px;display:grid;gap:12px}
+  .review h3{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;margin-bottom:2px}
+  .rev-item{border:1px solid var(--line);border-left:4px solid var(--wrong);border-radius:10px;padding:13px 15px;background:#FBFCFD}
+  .rev-q{font-weight:600;font-size:.95rem;margin-bottom:6px}
+  .rev-line{font-size:.9rem;color:var(--ink-soft);display:flex;gap:7px;margin-top:2px}
+  .rev-line b{color:var(--correct);font-weight:600}
+  .rev-line code,.rev-q code{font-family:'JetBrains Mono',monospace;background:rgba(90,101,119,.1);padding:1px 5px;border-radius:4px;font-size:.86em}
+  .results-actions{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
+  .all-good{padding:16px;background:var(--correct-bg);border:1px solid rgba(21,122,82,.3);border-radius:10px;color:var(--correct);font-weight:500}
+
+  footer.tiny{text-align:center;color:var(--ink-soft);font-size:.78rem;margin-top:26px;font-family:'JetBrains Mono',monospace}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+  }
+  @media (max-width:520px){
+    .card-foot{flex-direction:column;align-items:stretch}
+    .card-foot .btn{width:100%}
+    .counter{text-align:center}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="masthead">
+    <div class="eyebrow">Diplomado · Módulo 2 · Divide y Vencerás</div>
+    <h1>Quiz de repaso <span class="accent">Sesiones 1–3</span></h1>
+    <p>Paralelismo, arquitectura de Spark, particiones, agregaciones, joins y funciones de ventana. Responde, y si te equivocas verás la respuesta correcta con su explicación.</p>
+  </div>
+
+  <div id="app"></div>
+
+  <footer class="tiny">PySpark · Spark SQL · Databricks Free Edition</footer>
+</div>
+
+<script>
+/* ============================================================
+   BANCO DE PREGUNTAS  —  Sesiones 1 a 3
+   type: "concept" | "code"
+   code: (opcional) usa "◻" donde va el hueco a completar
+   correct: índice de la opción correcta
+   ============================================================ */
+const QUESTIONS = [
+  {
+    session:"Sesión 1", type:"concept",
+    q:"Según la “regla de oro” de la Sesión 1, ¿qué determina cuánto trabajo puede hacer Spark en paralelo?",
+    options:[
+      "El número de particiones en que están divididos los datos",
+      "La cantidad de memoria RAM del Driver",
+      "El tamaño total del dataset en gigabytes",
+      "La velocidad del disco donde se guardan los datos"
+    ],
+    correct:0,
+    explain:"El paralelismo lo marca el número de particiones: cada partición es una unidad de trabajo que un executor procesa a la vez. Con pocas particiones sobran manos ociosas."
+  },
+  {
+    session:"Sesión 1", type:"concept",
+    q:"En el benchmark de conteo de primos, Spark a veces resultó MÁS lento que el modo secuencial. ¿Por qué?",
+    options:[
+      "Con pocos datos, el costo de dividir, repartir y coordinar supera el beneficio de paralelizar",
+      "Spark siempre es más lento; solo se usa por costumbre",
+      "El modo secuencial usa más procesadores",
+      "Los números primos no se pueden paralelizar"
+    ],
+    correct:0,
+    explain:"Distribuir tiene un costo fijo (coordinación, arranque de tareas, shuffle). Si el dato es chico, ese costo pesa más que lo que ahorras. Spark brilla cuando el volumen justifica el reparto."
+  },
+  {
+    session:"Sesión 2", type:"concept",
+    q:"En la arquitectura de Spark, ¿qué pieza planea el trabajo y reparte las tareas entre las demás?",
+    options:[
+      "El Driver",
+      "Un Executor",
+      "El Cluster Manager",
+      "El DataFrame"
+    ],
+    correct:0,
+    explain:"El Driver es el cerebro: construye el plan y reparte tareas. Los Executors procesan las particiones y el Cluster Manager provee los recursos."
+  },
+  {
+    session:"Sesión 2", type:"concept",
+    q:"¿Cuál de estas afirmaciones describe la evaluación perezosa (lazy) de Spark?",
+    options:[
+      "Las transformaciones solo describen el trabajo; nada se ejecuta hasta que llega una acción",
+      "Spark ejecuta cada línea de inmediato, en orden",
+      "Las acciones se posponen hasta el final del notebook",
+      "Los DataFrames se guardan en disco tras cada paso"
+    ],
+    correct:0,
+    explain:"Spark acumula las transformaciones como un plan y no ejecuta nada hasta que una acción (count, show, collect…) lo dispara. Así puede optimizar todo el plan de una sola vez."
+  },
+  {
+    session:"Sesión 2", type:"concept",
+    q:"¿Cuál de las siguientes es una ACCIÓN (dispara la ejecución) y no una transformación?",
+    options:[
+      "count()",
+      "select()",
+      "filter()",
+      "withColumn()"
+    ],
+    correct:0,
+    explain:"count() obliga a Spark a ejecutar. select, filter y withColumn solo describen cambios y esperan hasta que una acción los active."
+  },
+  {
+    session:"Sesión 2", type:"concept",
+    q:"En este diplomado trabajamos con DataFrames en lugar de RDD crudos. ¿Cuál es la razón principal?",
+    options:[
+      "El DataFrame es una tabla distribuida que Spark optimiza automáticamente y es más legible",
+      "El RDD no existe en Apache Spark",
+      "El DataFrame guarda los datos en la nube y el RDD no",
+      "Los RDD solo sirven para procesar imágenes"
+    ],
+    correct:0,
+    explain:"El DataFrame ofrece una vista tabular optimizada por el motor (Catalyst). En Free Edition serverless evitamos el acceso de bajo nivel; los RDD se usan solo para inspección."
+  },
+  {
+    session:"Sesión 2", type:"concept",
+    q:"Quieres REDUCIR el número de particiones sin provocar un reordenamiento completo (shuffle) de los datos. ¿Qué usas?",
+    options:[
+      "coalesce()",
+      "repartition()",
+      "groupBy()",
+      "broadcast()"
+    ],
+    correct:0,
+    explain:"coalesce() junta particiones existentes evitando un shuffle completo; ideal para bajar el número. repartition() sí baraja todo y sirve para subir particiones o rebalancear."
+  },
+  {
+    session:"Sesión 2", type:"concept",
+    q:"Según la taxonomía distributiva/algebraica/holística, ¿cuál de estas métricas NO se puede combinar a partir de resultados parciales por partición?",
+    options:[
+      "La mediana",
+      "La suma (sum)",
+      "El conteo (count)",
+      "El promedio (avg)"
+    ],
+    correct:0,
+    explain:"sum y count son distributivas y avg es algebraica: se arman con parciales baratos. La mediana es holística: necesita ver todos los datos juntos, así que fuerza un shuffle grande."
+  },
+  {
+    session:"Sesión 3", type:"concept",
+    q:"La Sesión 3 propone una sola “lente” de tres preguntas para cualquier operación en Spark. ¿Cuáles son?",
+    options:[
+      "¿Qué se divide? ¿Qué se calcula local en cada partición? ¿Qué hay que mover para combinar?",
+      "¿Cuánta RAM hay? ¿Cuántos discos? ¿Cuántos usuarios?",
+      "¿Es CSV? ¿Es JSON? ¿Es Parquet?",
+      "¿Quién es el Driver? ¿Quién el Executor? ¿Quién el Manager?"
+    ],
+    correct:0,
+    explain:"Esa lente resume el motor: dividir en particiones, calcular localmente (lo barato y paralelo) y combinar los parciales. Ese último paso —el shuffle— suele ser el costo."
+  },
+  {
+    session:"Sesión 3", type:"concept",
+    q:"Tienes una tabla enorme de viajes y una tabla pequeña de códigos de zona. ¿Qué estrategia de join evita el shuffle costoso?",
+    options:[
+      "Broadcast join: copiar la tabla pequeña a todos los workers",
+      "Shuffle join: redistribuir ambas tablas por llave",
+      "No hacer join y usar dos DataFrames separados",
+      "Ordenar ambas tablas por fecha antes de unir"
+    ],
+    correct:0,
+    explain:"Si un lado es chico, Spark lo copia entero a cada worker (broadcast) y cada partición hace el join en local, ahorrándose barajar la tabla grande."
+  },
+  {
+    session:"Sesión 3", type:"concept",
+    q:"¿En qué se diferencia una función de ventana (window) de un groupBy?",
+    options:[
+      "La ventana agrega PERO conserva todas las filas originales; groupBy las colapsa en un resumen",
+      "La ventana solo funciona con columnas de fecha",
+      "groupBy siempre es más rápido que la ventana",
+      "La ventana no puede usar PARTITION BY"
+    ],
+    correct:0,
+    explain:"groupBy colapsa cada grupo en una fila de resumen. La función de ventana calcula “al lado” de cada fila sin eliminarla, útil para rankings o acumulados."
+  },
+  {
+    session:"Sesión 3", type:"concept",
+    q:"En una función de ventana, ¿qué representa la cláusula PARTITION BY dentro del hilo “divide y vencerás”?",
+    options:[
+      "Es literalmente el paso “divide”: nombra en qué grupos se reparte el cálculo",
+      "Ordena el resultado final alfabéticamente",
+      "Guarda los datos en particiones de disco distintas",
+      "Elimina las filas duplicadas"
+    ],
+    correct:0,
+    explain:"PARTITION BY es el “divide” hecho sintaxis: define los grupos dentro de los cuales corre la ventana, igual que el número de particiones definía el paralelismo."
+  },
+  {
+    session:"Sesión 3", type:"concept",
+    q:"¿Por qué Parquet es un aliado del “divide y vencerás” frente a un CSV?",
+    options:[
+      "Es columnar: permite leer solo las columnas necesarias (poda de columnas), moviendo menos datos",
+      "Ocupa más espacio pero se lee exactamente igual que un CSV",
+      "Guarda los datos en texto plano fácil de abrir",
+      "Solo funciona si hay una única partición"
+    ],
+    correct:0,
+    explain:"Al ser columnar, Parquet lee únicamente las columnas que la consulta pide. Menos lectura y menos shuffle: más eficiente para el motor."
+  },
+  {
+    session:"Sesión 3", type:"concept",
+    q:"Escribes una consulta en PySpark y la misma en Spark SQL. ¿Qué ocurre por debajo?",
+    options:[
+      "Ambas se compilan al mismo plan físico optimizado (Catalyst): mismo motor, dos formas de pedirlo",
+      "Spark SQL siempre es más lento porque interpreta texto",
+      "PySpark usa el CPU y Spark SQL usa el disco",
+      "Producen resultados distintos y hay que elegir cuál creer"
+    ],
+    correct:0,
+    explain:"DataFrame API y Spark SQL son dos puertas al mismo motor. Catalyst genera el mismo plan optimizado, así que rendimiento y resultado coinciden. Usa la que te resulte más clara."
+  },
+  {
+    session:"Sesión 2", type:"code",
+    q:"Completa el alias estándar con el que se importa el módulo de funciones de PySpark.",
+    code:"from pyspark.sql import functions as ◻",
+    options:["F","func","pyspark","sql"],
+    correct:0,
+    explain:"Por convención se importa como F: F.col(...), F.avg(...), F.when(...). Es el alias que verás en casi todo el código de Spark."
+  },
+  {
+    session:"Sesión 3", type:"code",
+    q:"Completa la función que fuerza un broadcast join copiando la tabla pequeña a todos los workers.",
+    code:"grande.join(◻(chica), \"zona_id\")",
+    options:["broadcast","repartition","coalesce","partitionBy"],
+    correct:0,
+    explain:"broadcast(chica) marca la tabla chica para copiarse a todos los workers, evitando el shuffle de la tabla grande."
+  },
+  {
+    session:"Sesión 3", type:"code",
+    q:"Quieres el promedio de la tarifa por número de pasajeros. Completa el método de agregación.",
+    code:"df.groupBy(\"passenger_count\") \\\n  .◻(\"fare_amount\")",
+    options:["avg","count","filter","select"],
+    correct:0,
+    explain:".avg(\"fare_amount\") calcula el promedio por grupo. avg es algebraica: se arma con parciales (suma y conteo) por partición y se combina barato."
+  },
+  {
+    session:"Sesión 3", type:"code",
+    q:"Completa la cláusula que define el “divide” de una función de ventana.",
+    code:"from pyspark.sql import Window\nw = Window.◻(\"dia\").orderBy(\"hora\")",
+    options:["partitionBy","groupBy","repartition","coalesce"],
+    correct:0,
+    explain:"partitionBy define los grupos de la ventana (aquí, por día). orderBy solo ordena dentro de cada grupo; no divide."
+  },
+  {
+    session:"Sesión 3", type:"code",
+    q:"En un notebook de Databricks, ¿qué pones en la primera línea de la celda para escribir SQL directo, sin comillas ni spark.sql()?",
+    code:"◻\nSELECT hora, COUNT(*) AS viajes\nFROM   samples.nyctaxi.trips\nGROUP  BY hora",
+    options:["%sql","%python","spark.sql","#sql"],
+    correct:0,
+    explain:"%sql en la primera línea convierte toda la celda en SQL puro. Es el “magic command” de Databricks para cambiar de lenguaje por celda."
+  },
+  {
+    session:"Sesión 2", type:"code",
+    q:"Completa la ACCIÓN que cuenta cuántas filas cumplen el filtro (y dispara la ejecución del plan).",
+    code:"n = df.filter(F.col(\"fare_amount\") > 0).◻()",
+    options:["count","select","withColumn","orderBy"],
+    correct:0,
+    explain:"count() es una acción: obliga a Spark a ejecutar el plan (el filter previo estaba en espera) y devuelve el número de filas."
+  }
+];
+
+/* ============================================================
+   ESTADO Y RENDER
+   ============================================================ */
+const app = document.getElementById('app');
+const state = { screen:'start', idx:0, answers:new Array(QUESTIONS.length).fill(null) };
+const LETTERS = ['A','B','C','D','E'];
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// Resaltado ligero de código para el bloque <pre>
+function highlight(raw){
+  let out = esc(raw);
+  // strings entre comillas dobles
+  out = out.replace(/&quot;[^&]*?&quot;|"[^"]*?"/g, m=>`<span class="tok-str">${m}</span>`);
+  // palabras clave frecuentes
+  out = out.replace(/\b(from|import|as|SELECT|FROM|GROUP|BY|COUNT|AS)\b/g, '<span class="tok-kw">$1</span>');
+  return out;
+}
+
+function renderCode(codeStr, filledWith){
+  const parts = codeStr.split('◻');
+  const blankHTML = filledWith
+    ? `<span class="blank filled">${esc(filledWith)}</span>`
+    : `<span class="blank">◻</span>`;
+  return `<pre class="code">${parts.map(highlight).join(blankHTML)}</pre>`;
+}
+
+function partitionBar(){
+  let html = '<div class="partitions">';
+  for(let i=0;i<QUESTIONS.length;i++){
+    let cls='part';
+    if(i===state.idx && state.screen==='quiz') cls+=' current';
+    const a = state.answers[i];
+    if(a!==null){ cls += (a===QUESTIONS[i].correct) ? ' correct' : ' wrong'; }
+    html += `<span class="${cls}"></span>`;
+  }
+  html += '</div>';
+  const answered = state.answers.filter(a=>a!==null).length;
+  html += `<div class="parts-label"><span>${answered} / ${QUESTIONS.length} particiones procesadas</span><span>divide · calcula · combina</span></div>`;
+  return html;
+}
+
+/* ---------- Pantalla de inicio ---------- */
+function renderStart(){
+  app.innerHTML = `
+    <div class="card">
+      <div class="tags"><span class="tag session">${QUESTIONS.length} preguntas</span><span class="tag kind-concept">opción múltiple</span><span class="tag kind-code">completar código</span></div>
+      <div class="qtext">Repasa lo esencial de las tres primeras sesiones</div>
+      <ul class="intro-list">
+        <li><b>Sesión 1 —</b> Paralelismo: la regla de oro y por qué Spark no siempre gana.</li>
+        <li><b>Sesión 2 —</b> Arquitectura, evaluación perezosa, particiones y la taxonomía de agregaciones.</li>
+        <li><b>Sesión 3 —</b> Divide y vencerás: formatos, joins, funciones de ventana y el motor unificado.</li>
+      </ul>
+      <p style="color:var(--ink-soft);font-size:.92rem;margin-top:6px">Cada respuesta te da retroalimentación al instante. Si fallas, se marca la opción correcta y verás por qué.</p>
+      <div class="start-actions">
+        <button class="btn btn-primary" onclick="start()">Comenzar el quiz →</button>
+        <span class="meta-line">tiempo estimado ≈ 8 min</span>
+      </div>
+    </div>`;
+}
+
+/* ---------- Pantalla de pregunta ---------- */
+function renderQuestion(){
+  const q = QUESTIONS[state.idx];
+  const chosen = state.answers[state.idx];
+  const answered = chosen !== null;
+  const isLast = state.idx === QUESTIONS.length - 1;
+  const kindTag = q.type==='code'
+    ? '<span class="tag kind-code">completar código</span>'
+    : '<span class="tag kind-concept">concepto</span>';
+
+  let optsHTML = '';
+  q.options.forEach((opt,i)=>{
+    let cls = 'opt' + (q.type==='code' ? ' code-opt' : '');
+    if(answered){
+      if(i===q.correct) cls+=' is-correct';
+      else if(i===chosen) cls+=' is-wrong';
+      else cls+=' dimmed';
+    }
+    optsHTML += `
+      <button class="${cls}" ${answered?'disabled':''} onclick="answer(${i})">
+        <span class="marker">${LETTERS[i]}</span>
+        <span class="opt-text">${esc(opt)}</span>
+      </button>`;
+  });
+
+  let feedbackHTML = '';
+  if(answered){
+    const ok = chosen === q.correct;
+    feedbackHTML = `
+      <div class="feedback show ${ok?'ok':'no'}">
+        <div class="fb-head">${ok?'✓ ¡Correcto!':'✕ Casi — revisa esto'}</div>
+        <div class="fb-body">${ok?'':`La respuesta correcta es <strong>${LETTERS[q.correct]}) ${esc(q.options[q.correct])}</strong>. `}${esc(q.explain)}</div>
+      </div>`;
+  }
+
+  app.innerHTML = `
+    ${partitionBar()}
+    <div class="card">
+      <div class="tags"><span class="tag session">${q.session}</span>${kindTag}</div>
+      <div class="qtext">${esc(q.q)}</div>
+      ${q.code ? renderCode(q.code, answered ? q.options[q.correct] : null) : ''}
+      <div class="options">${optsHTML}</div>
+      ${feedbackHTML}
+      <div class="card-foot">
+        <span class="counter">Pregunta ${state.idx+1} de ${QUESTIONS.length}</span>
+        <button class="btn btn-primary" id="nextBtn" ${answered?'':'disabled'} onclick="next()">
+          ${isLast ? 'Ver resultados →' : 'Siguiente →'}
+        </button>
+      </div>
+    </div>`;
+}
+
+/* ---------- Pantalla de resultados ---------- */
+function renderResults(){
+  const total = QUESTIONS.length;
+  const score = state.answers.reduce((acc,a,i)=>acc + (a===QUESTIONS[i].correct?1:0),0);
+  const pct = Math.round(score/total*100);
+
+  let msg, sub;
+  if(pct===100){ msg='Dominas el divide y vencerás.'; sub='Cero shuffles innecesarios: perfecto.'; }
+  else if(pct>=80){ msg='Muy sólido.'; sub='Tienes clara la lente de las tres preguntas; afina un par de detalles.'; }
+  else if(pct>=60){ msg='Buen avance.'; sub='Las bases están; repasa los puntos marcados abajo.'; }
+  else if(pct>=40){ msg='Vas encaminado.'; sub='Vale la pena releer los conceptos de las sesiones 2 y 3.'; }
+  else { msg='A repartir de nuevo.'; sub='Repasa los apuntes y vuelve a intentarlo; se aprende iterando.'; }
+
+  // errores
+  const wrong = [];
+  state.answers.forEach((a,i)=>{ if(a!==QUESTIONS[i].correct) wrong.push(i); });
+
+  let reviewHTML;
+  if(wrong.length===0){
+    reviewHTML = `<div class="all-good">✓ Respondiste todo correctamente. No hay nada que repasar.</div>`;
+  } else {
+    reviewHTML = `<div class="review"><h3>Para repasar (${wrong.length})</h3>` +
+      wrong.map(i=>{
+        const q = QUESTIONS[i];
+        const yourAns = state.answers[i]===null ? '—' : q.options[state.answers[i]];
+        const qLabel = q.code ? esc(q.q)+` <code>${esc(q.code.replace(/\n/g,' ').replace('◻','___'))}</code>` : esc(q.q);
+        return `<div class="rev-item">
+            <div class="rev-q">${qLabel}</div>
+            <div class="rev-line">Tu respuesta: <span>${esc(yourAns)}</span></div>
+            <div class="rev-line">Correcta: <b>${esc(q.options[q.correct])}</b></div>
+            <div class="rev-line" style="margin-top:5px">${esc(q.explain)}</div>
+          </div>`;
+      }).join('') + `</div>`;
+  }
+
+  app.innerHTML = `
+    ${partitionBar()}
+    <div class="card">
+      <div class="tags"><span class="tag session">Resultado</span></div>
+      <div class="score-ring">
+        <div class="score-num">${score}<span>/${total} · ${pct}%</span></div>
+        <div class="score-msg">${msg}<div class="score-sub">${sub}</div></div>
+      </div>
+      ${reviewHTML}
+      <div class="results-actions">
+        <button class="btn btn-primary" onclick="restart()">↺ Reiniciar quiz</button>
+        <button class="btn btn-ghost" onclick="reviewFirstWrong()" ${wrong.length?'':'style="display:none"'}>Volver a la primera fallada</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- Controladores ---------- */
+function render(){
+  if(state.screen==='start') renderStart();
+  else if(state.screen==='quiz') renderQuestion();
+  else renderResults();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function start(){ state.screen='quiz'; state.idx=0; render(); }
+function answer(i){
+  if(state.answers[state.idx]!==null) return;
+  state.answers[state.idx]=i;
+  renderQuestion(); // re-render sin scroll para no perder de vista el feedback
+  const btn=document.getElementById('nextBtn'); if(btn) btn.focus();
+}
+function next(){
+  if(state.answers[state.idx]===null) return;
+  if(state.idx < QUESTIONS.length-1){ state.idx++; render(); }
+  else { state.screen='results'; render(); }
+}
+function restart(){ state.screen='start'; state.idx=0; state.answers=new Array(QUESTIONS.length).fill(null); render(); }
+function reviewFirstWrong(){
+  const i = state.answers.findIndex((a,k)=>a!==QUESTIONS[k].correct);
+  if(i>=0){ state.screen='quiz'; state.idx=i; render(); }
+}
+
+render();
+</script>
+</body>
+</html>
