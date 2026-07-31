@@ -3,50 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador Interactivo de Big Data & Spark</title>
+    <title>Simulador Interactivo de Big Data & Spark Pro</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-red { 0%, 100% { background-color: rgba(153, 27, 27, 0.1); border-color: #ef4444; } 50% { background-color: rgba(153, 27, 27, 0.3); border-color: #f87171; } }
+        @keyframes pulse-green { 0%, 100% { background-color: rgba(6, 78, 59, 0.1); border-color: #10b981; } 50% { background-color: rgba(6, 78, 59, 0.3); border-color: #34d399; } }
+        .anim-shuffle { animation: pulse-red 1.5s infinite; }
+        .anim-broadcast { animation: pulse-green 1.5s infinite; }
+        .datatable td, .datatable th { padding: 0.5rem; border-bottom: 1px solid #1e293b; font-family: monospace; font-size: 0.75rem; }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen p-6">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen p-3 md:p-6">
 
-    <div class="max-w-6xl mx-auto space-y-8">
+    <div class="max-w-7xl mx-auto space-y-8">
         <!-- Encabezado -->
-        <header class="border-b border-slate-800 pb-4 flex justify-between items-center">
+        <header class="border-b border-slate-800 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-indigo-400">Laboratorio Visual de Big Data</h1>
-                <p class="text-sm text-slate-400">Demostraciones interactivas para entender transformaciones y joins distribuidos.</p>
+                <h1 class="text-2xl font-bold tracking-tight text-indigo-400">Laboratorio Visual de Big Data Pro</h1>
+                <p class="text-sm text-slate-400">Entiende internamente cómo Spark procesa datos en un clúster.</p>
             </div>
             <!-- Pestañas de navegación -->
-            <div class="flex space-x-2 bg-slate-900 p-1 rounded-lg border border-slate-800">
-                <button onclick="cambiarTab('transf')" id="btn-transf" class="px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white transition">Operaciones Básicas</button>
-                <button onclick="cambiarTab('join')" id="btn-join" class="px-4 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-white transition">Broadcast vs Shuffle Join</button>
+            <div class="flex space-x-2 bg-slate-900 p-1 rounded-lg border border-slate-800 self-stretch sm:self-auto">
+                <button onclick="cambiarTab('transf')" id="btn-transf" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white transition">Operaciones Básicas</button>
+                <button onclick="cambiarTab('join')" id="btn-join" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-white transition">Broadcast vs Shuffle Join</button>
             </div>
         </header>
 
-        <!-- SECCIÓN 1: OPERACIONES BÁSICAS (SELECT, DROP, FILTER, ORDER BY) -->
+        <!-- SECCIÓN 1: OPERACIONES BÁSICAS -->
         <section id="sec-transf" class="space-y-6">
             <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                <h2 class="text-lg font-semibold text-slate-200 mb-2">Simulador de DataFrame (Transformaciones)</h2>
-                <p class="text-sm text-slate-400 mb-6">Selecciona una operación de PySpark para ver cómo transforma el conjunto de datos original fila por fila.</p>
+                <h2 class="text-lg font-semibold text-slate-200 mb-2">Simulador de DataFrame (Transformaciones en 1 Nodo)</h2>
+                <p class="text-sm text-slate-400 mb-6">Demostración conceptual de transformaciones en memoria.</p>
 
-                <!-- Botones de operaciones -->
-                <div class="flex flex-wrap gap-3 mb-6">
-                    <button onclick="ejecutarOp('select')" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded-lg text-sm font-mono transition">.select("id", "nombre")</button>
-                    <button onclick="ejecutarOp('filter')" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded-lg text-sm font-mono transition">.filter(edad > 25)</button>
-                    <button onclick="ejecutarOp('drop')" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded-lg text-sm font-mono transition">.drop("salario")</button>
-                    <button onclick="ejecutarOp('orderby')" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded-lg text-sm font-mono transition">.orderBy(edad.desc())</button>
-                    <button onclick="ejecutarOp('reset')" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-400 transition">Reiniciar</button>
+                <div class="flex flex-wrap gap-3 mb-6 font-mono text-xs">
+                    <button onclick="ejecutarOp('select')" class="px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded transition">.select("id", "nombre")</button>
+                    <button onclick="ejecutarOp('filter')" class="px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded transition">.filter(edad > 25)</button>
+                    <button onclick="ejecutarOp('drop')" class="px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded transition">.drop("salario")</button>
+                    <button onclick="ejecutarOp('orderby')" class="px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 border border-slate-700 rounded transition">.orderBy(edad.desc())</button>
+                    <button onclick="ejecutarOp('reset')" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded text-slate-400 transition">Reiniciar</button>
                 </div>
 
-                <!-- Contenedor de tablas -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">DataFrame Original</h3>
-                        <div id="tabla-origen" class="overflow-x-auto border border-slate-800 rounded-lg bg-slate-950"></div>
+                        <div id="tabla-origen" class="overflow-x-auto border border-slate-800 rounded-lg bg-slate-950 min-h-[200px]"></div>
                     </div>
                     <div>
-                        <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-2">DataFrame Transformado (Resultado)</h3>
-                        <div id="tabla-resultado" class="overflow-x-auto border border-indigo-900/50 rounded-lg bg-indigo-950/20"></div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-2">DataFrame Transformado</h3>
+                        <div id="tabla-resultado" class="overflow-x-auto border border-indigo-900/50 rounded-lg bg-indigo-950/20 min-h-[200px]"></div>
                     </div>
                 </div>
             </div>
@@ -55,44 +60,84 @@
         <!-- SECCIÓN 2: BROADCAST VS STANDARD JOIN -->
         <section id="sec-join" class="space-y-6 hidden">
             <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
-                <h2 class="text-lg font-semibold text-slate-200 mb-2">Mecanismo de Joins en Clústeres</h2>
-                <p class="text-sm text-slate-400 mb-6">Compara el tráfico de red generado por un Shuffle Join tradicional frente a un Broadcast Join.</p>
+                <h2 class="text-lg font-semibold text-slate-200 mb-2">Mecanismo de Joins Distribuidos (Explicado)</h2>
+                <p class="text-sm text-slate-400 mb-6">Compara cómo viajan los datos y qué hace cada nodo al unir dos tablas basándose en claves (`id_producto` = `id`).</p>
+
+                <!-- Área de Datos de Entrada visuales -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-slate-950 p-4 rounded-lg border border-slate-800">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-2">Tabla A: Ventas (Hechos - "Grande")</h3>
+                        <div id="data-join-ventas" class="overflow-x-auto"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Tabla B: Productos (Dimensión - "Pequeña")</h3>
+                        <div id="data-join-productos" class="overflow-x-auto"></div>
+                    </div>
+                </div>
 
                 <!-- Controles -->
-                <div class="flex gap-4 mb-6">
-                    <button onclick="ejecutarJoin('standard')" class="px-5 py-2.5 bg-rose-900/40 hover:bg-rose-900 border border-rose-700 rounded-lg text-sm font-medium text-rose-200 transition">Ejecutar Standard Join (Shuffle)</button>
-                    <button onclick="ejecutarJoin('broadcast')" class="px-5 py-2.5 bg-emerald-900/40 hover:bg-emerald-900 border border-emerald-700 rounded-lg text-sm font-medium text-emerald-200 transition">Ejecutar Broadcast Join</button>
+                <div class="flex flex-wrap gap-4 mb-8 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <div class="flex-1 min-w-[280px]">
+                        <h4 class="text-sm font-semibold text-rose-300">Shuffle Hash Join (Por Defecto)</h4>
+                        <p class="text-xs text-slate-400 mb-3">Ambas tablas se redistribuyen por red basándose en el Hash de la clave.</p>
+                        <button onclick="ejecutarJoin('standard')" id="btn-run-standard" class="w-full px-5 py-2.5 bg-rose-900/60 hover:bg-rose-900 border border-rose-700 rounded-lg text-sm font-medium text-rose-100 transition disabled:opacity-50">Ejecutar Shuffle Join</button>
+                    </div>
+                    <div class="border-l border-slate-700"></div>
+                    <div class="flex-1 min-w-[280px]">
+                        <h4 class="text-sm font-semibold text-emerald-300">Broadcast Hash Join (Optimizado)</h4>
+                        <p class="text-xs text-slate-400 mb-3">La tabla pequeña se envía entera a todos los nodos. La grande no se mueve.</p>
+                        <button onclick="ejecutarJoin('broadcast')" id="btn-run-broadcast" class="w-full px-5 py-2.5 bg-emerald-900/60 hover:bg-emerald-900 border border-emerald-700 rounded-lg text-sm font-medium text-emerald-100 transition disabled:opacity-50">Ejecutar Broadcast Join</button>
+                    </div>
                 </div>
 
                 <!-- Área de Simulación de Nodos -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-slate-950 border border-slate-800 rounded-xl p-6 min-h-[300px]">
+                <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 bg-slate-950 border border-slate-800 rounded-xl p-6 min-h-[400px]">
                     <!-- Driver / Origen -->
-                    <div class="flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800 pb-4 lg:pb-0 lg:pr-4">
+                    <div class="xl:col-span-1 flex flex-col justify-between border-b xl:border-b-0 xl:border-r border-slate-800 pb-4 xl:pb-0 xl:pr-6">
                         <div>
-                            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Driver Node</span>
-                            <div class="mt-3 space-y-2">
-                                <div class="p-2 bg-slate-900 border border-slate-800 rounded text-xs">Tabla Grande (Hechos) [10M filas]</div>
-                                <div id="tabla-pequena-box" class="p-2 bg-indigo-950 border border-indigo-800 rounded text-xs text-indigo-200">Tabla Pequeña (Dimensión) [5 filas]</div>
+                            <span class="px-2 py-0.5 rounded bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">Driver Node</span>
+                            <div class="mt-4 space-y-3 text-xs">
+                                <p class="text-slate-400">Coordina la ejecución y planifica tareas.</p>
+                                <div id="driver-status" class="p-3 bg-slate-900 border border-slate-800 rounded text-amber-300 font-mono text-[11px]">Estado: Esperando orden...</div>
                             </div>
                         </div>
-                        <div id="log-join" class="mt-4 p-3 bg-slate-900 border border-slate-800 rounded text-xs text-slate-300 font-mono">Estado: Esperando acción...</div>
+                        <div class="mt-4 text-xs p-3 bg-slate-900 rounded border border-slate-800">
+                            <span class="font-semibold text-slate-300">Clave de Unión:</span><br>
+                            <span class="font-mono text-indigo-400">Ventas.id_producto = Productos.id</span>
+                        </div>
                     </div>
 
                     <!-- Ejecutores del Clúster -->
-                    <div class="lg:col-span-2 flex flex-col justify-center">
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Worker Nodes (Ejecutores del Clúster)</span>
-                        <div class="grid grid-cols-3 gap-4">
-                            <div id="nodo-1" class="p-4 bg-slate-900 border border-slate-800 rounded-lg text-center transition">
-                                <span class="text-xs font-bold text-slate-400">Nodo 1</span>
-                                <div class="text-xs text-slate-500 mt-2 datos-nodo">Partición A</div>
+                    <div class="xl:col-span-3 flex flex-col">
+                        <span class="px-2 py-0.5 rounded bg-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider self-start mb-6">Worker Nodes (Ejecutores)</span>
+                        
+                        <div id="contenedor-nodos" class="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow">
+                            <!-- Nodo 1 -->
+                            <div id="nodo-1" class="flex flex-col border border-slate-800 rounded-lg bg-slate-900 transition-all duration-300">
+                                <div class="p-2 border-b border-slate-800 bg-slate-800/50 text-center text-xs font-bold text-slate-400">Nodo 1</div>
+                                <div class="p-3 flex-grow space-y-3">
+                                    <div class="nodo-info text-xs text-slate-500 italic">Cargando partición inicial...</div>
+                                    <div class="nodo-data overflow-x-auto min-h-[60px]"></div>
+                                    <div class="nodo-local-table overflow-x-auto min-h-[60px] hidden border-t border-slate-800 pt-2"></div>
+                                </div>
                             </div>
-                            <div id="nodo-2" class="p-4 bg-slate-900 border border-slate-800 rounded-lg text-center transition">
-                                <span class="text-xs font-bold text-slate-400">Nodo 2</span>
-                                <div class="text-xs text-slate-500 mt-2 datos-nodo">Partición B</div>
+                            <!-- Nodo 2 -->
+                            <div id="nodo-2" class="flex flex-col border border-slate-800 rounded-lg bg-slate-900 transition-all duration-300">
+                                <div class="p-2 border-b border-slate-800 bg-slate-800/50 text-center text-xs font-bold text-slate-400">Nodo 2</div>
+                                <div class="p-3 flex-grow space-y-3">
+                                    <div class="nodo-info text-xs text-slate-500 italic">Cargando partición inicial...</div>
+                                    <div class="nodo-data overflow-x-auto min-h-[60px]"></div>
+                                    <div class="nodo-local-table overflow-x-auto min-h-[60px] hidden border-t border-slate-800 pt-2"></div>
+                                </div>
                             </div>
-                            <div id="nodo-3" class="p-4 bg-slate-900 border border-slate-800 rounded-lg text-center transition">
-                                <span class="text-xs font-bold text-slate-400">Nodo 3</span>
-                                <div class="text-xs text-slate-500 mt-2 datos-nodo">Partición C</div>
+                            <!-- Nodo 3 -->
+                            <div id="nodo-3" class="flex flex-col border border-slate-800 rounded-lg bg-slate-900 transition-all duration-300">
+                                <div class="p-2 border-b border-slate-800 bg-slate-800/50 text-center text-xs font-bold text-slate-400">Nodo 3</div>
+                                <div class="p-3 flex-grow space-y-3">
+                                    <div class="nodo-info text-xs text-slate-500 italic">Cargando partición inicial...</div>
+                                    <div class="nodo-data overflow-x-auto min-h-[60px]"></div>
+                                    <div class="nodo-local-table overflow-x-auto min-h-[60px] hidden border-t border-slate-800 pt-2"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -103,7 +148,9 @@
 
     <!-- SCRIPT INCLUIDO DIRECTAMENTE -->
     <script>
-        // Datos iniciales de prueba para el DataFrame
+        // --- CONFIGURACIÓN DE DATOS ---
+        
+        // Datos Pestaña 1
         const datosOriginales = [
             { id: 1, nombre: "Ana", edad: 28, salario: 45000 },
             { id: 2, nombre: "Carlos", edad: 22, salario: 30000 },
@@ -112,13 +159,48 @@
             { id: 5, nombre: "Elena", edad: 24, salario: 32000 }
         ];
 
-        // Inicializar la tabla de origen al cargar
-        window.onload = function() {
-            renderTabla(datosOriginales, "tabla-origen");
-            renderTabla(datosOriginales, "tabla-resultado");
+        // Datos Pestaña 2 (JOIN) con llaves claras
+        // Simulamos que Ventas está distribuida inicialmente
+        const tablaVentasParticionada = {
+            nodo1: [
+                { id_venta: 'V01', id_producto: P2, monto: 1200 }, // P2 = Laptop
+                { id_venta: 'V02', id_producto: P1, monto: 150 }   // P1 = Mouse
+            ],
+            nodo2: [
+                { id_venta: 'V03', id_producto: P2, monto: 1200 }, // P2 = Laptop
+                { id_venta: 'V04', id_producto: P3, monto: 500 }   // P3 = Monitor
+            ],
+            nodo3: [
+                { id_venta: 'V05', id_producto: P1, monto: 150 },   // P1 = Mouse
+                { id_venta: 'V06', id_producto: P9, monto: 9999 }  // P9 = NO EXISTE (para ver nulls)
+            ]
         };
 
-        // Función para cambiar de pestaña en la interfaz
+        // Claves constantes para fácil lectura
+        const P1 = '1 (Mouse)', P2 = '2 (Laptop)', P3 = '3 (Monitor)', P9 = '9 (Desconocido)';
+
+        // Unimos todo para mostrar la tabla completa "Grande" en el Driver
+        const tablaVentasCompleta = [...tablaVentasParticionParticionada.nodo1, ...tablaVentasParticionada.nodo2, ...tablaVentasParticionada.nodo3];
+
+        const tablaProductosPequena = [
+            { id: '1 (Mouse)', nombre_producto: "Mouse Óptico", precio: 20 },
+            { id: '2 (Laptop)', nombre_producto: "Laptop Pro 15", precio: 1000 },
+            { id: '3 (Monitor)', nombre_producto: "Monitor 4K", precio: 450 }
+        ];
+
+        // --- INICIALIZACIÓN ---
+        window.onload = function() {
+            // Tab 1
+            renderTablaGeneric(datosOriginales, "tabla-origen");
+            renderTablaGeneric(datosOriginales, "tabla-resultado");
+            
+            // Tab 2 - Datos de entrada
+            renderTablaGeneric(tablaVentasCompleta, "data-join-ventas", "rose");
+            renderTablaGeneric(tablaProductosPequena, "data-join-productos", "emerald");
+            resetNodosJoinVisual();
+        };
+
+        // --- UTILIDADES DE UI ---
         function cambiarTab(tab) {
             const secTransf = document.getElementById("sec-transf");
             const secJoin = document.getElementById("sec-join");
@@ -138,102 +220,221 @@
             }
         }
 
-        // Renderizador visual de tablas HTML
-        function renderTabla(datos, elementoId) {
+        function renderTablaGeneric(datos, elementoId, colorTheme = "slate") {
             const contenedor = document.getElementById(elementoId);
             if (!datos || datos.length === 0) {
-                contenedor.innerHTML = `<div class="p-4 text-center text-xs text-slate-500">Sin datos</div>`;
+                contenedor.innerHTML = `<div class="p-2 text-center text-xs text-slate-600">Vacío</div>`;
                 return;
             }
-
             const columnas = Object.keys(datos[0]);
+            const headerColor = colorTheme === "rose" ? "text-rose-300" : colorTheme === "emerald" ? "text-emerald-300" : "text-slate-400";
+            const borderColor = colorTheme === "rose" ? "border-rose-900" : colorTheme === "emerald" ? "border-emerald-900" : "border-slate-800";
             
-            let html = `<table class="w-full text-left text-xs border-collapse"><thead><tr class="border-b border-slate-800 bg-slate-900/50">`;
-            columnas.forEach(col => {
-                html += `<th class="p-2.5 font-semibold text-slate-400 uppercase tracking-wider">${col}</th>`;
-            });
-            html += `</tr></thead><tbody class="divide-y divide-slate-800/60">`;
-
+            let html = `<table class="w-full text-left datatable ${borderColor}"><thead><tr>`;
+            columnas.forEach(col => html += `<th class="${headerColor}">${col}</th>`);
+            html += `</tr></thead><tbody>`;
             datos.forEach(fila => {
                 html += `<tr>`;
-                columnas.forEach(col => {
-                    html += `<td class="p-2.5 text-slate-300 font-mono">${fila[col]}</td>`;
-                });
+                columnas.forEach(col => html += `<td>${fila[col]}</td>`);
                 html += `</tr>`;
             });
             html += `</tbody></table>`;
-            
             contenedor.innerHTML = html;
         }
 
-        // Simulación de transformaciones de Spark
+        // --- LÓGICA TAB 1: TRANSFORMACIONES ---
         function ejecutarOp(tipo) {
             let resultado = [...datosOriginales];
-
             switch(tipo) {
-                case 'select':
-                    resultado = resultado.map(item => ({ id: item.id, nombre: item.nombre }));
-                    break;
-                case 'filter':
-                    resultado = resultado.filter(item => item.edad > 25);
-                    break;
-                case 'drop':
-                    resultado = resultado.map(item => {
-                        const { salario, ...resto } = item;
-                        return resto;
-                    });
-                    break;
-                case 'orderby':
-                    resultado.sort((a, b) => b.edad - a.edad);
-                    break;
-                case 'reset':
-                default:
-                    break;
+                case 'select': resultado = resultado.map(item => ({ id: item.id, nombre: item.nombre })); break;
+                case 'filter': resultado = resultado.filter(item => item.edad > 25); break;
+                case 'drop': resultado = resultado.map(({ salario, ...resto }) => resto); break;
+                case 'orderby': resultado.sort((a, b) => b.edad - a.edad); break;
+                case 'reset': default: break;
             }
-
-            renderTabla(resultado, "tabla-resultado");
+            renderTablaGeneric(resultado, "tabla-resultado", "indigo");
         }
 
-        // Simulación visual de Joins
-        async function ejecutarJoin(tipo) {
-            const log = document.getElementById("log-join");
-            const n1 = document.getElementById("nodo-1");
-            const n2 = document.getElementById("nodo-2");
-            const n3 = document.getElementById("nodo-3");
+        // --- LÓGICA TAB 2: SIMULADOR DE JOINS ---
 
-            // Resetear estilos de nodos
-            [n1, n2, n3].forEach(n => {
-                n.className = "p-4 bg-slate-900 border border-slate-800 rounded-lg text-center transition duration-300";
+        const ms = (millisecons) => new Promise(r => setTimeout(r, millisecons));
+        
+        function getNodosElements() {
+            return [1, 2, 3].map(i => ({
+                container: document.getElementById(`nodo-${i}`),
+                info: document.querySelector(`#nodo-${i} .nodo-info`),
+                data: document.querySelector(`#nodo-${i} .nodo-data`),
+                localTable: document.querySelector(`#nodo-${i} .nodo-local-table`)
+            }));
+        }
+
+        function resetNodosJoinVisual() {
+            const nodos = getNodosElements();
+            document.getElementById('driver-status').innerText = "Estado: Listos para empezar.";
+            document.getElementById('driver-status').className = "p-3 bg-slate-900 border border-slate-800 rounded text-slate-300 font-mono text-[11px]";
+            
+            nodos.forEach((nodo, index) => {
+                const idNodo = `nodo${index + 1}`;
+                nodo.container.className = "flex flex-col border border-slate-800 rounded-lg bg-slate-900 transition-all duration-300";
+                nodo.info.innerText = "Partición inicial (Tabla Ventas):";
+                nodo.info.className = "nodo-info text-xs text-slate-400 font-semibold";
+                nodo.localTable.classList.add('hidden');
+                nodo.localTable.innerHTML = '';
+                renderTablaGeneric(tablaVentasParticionada[idNodo], nodo.data.id || `data-n${index+1}`); // HACK: renderTabla necesita ID, pero aquí inyectamos directo
+                // Corregimos el renderizado directo en el nodo
+                renderTablaGeneric(tablaVentasParticionada[idNodo], ''); 
+                nodo.data.innerHTML = nodo.data.previousSibling.previousSibling ? '' : nodo.data.innerHTML; // Limpieza si renderTabla falló por ID vacío
+                // Re-render correcto inyectando HTML
+                renderTablaEnContenedor(tablaVentasParticionada[idNodo], nodo.data, "rose");
             });
+        }
+
+        // Versión modificada de renderTabla para inyectar directamente en elemento, no por ID
+        function renderTablaEnContenedor(datos, contenedor, colorTheme = "slate") {
+            if (!datos || datos.length === 0) {
+                contenedor.innerHTML = `<div class="p-1 text-center text-[10px] text-slate-600">Sin filas</div>`;
+                return;
+            }
+            const columnas = Object.keys(datos[0]);
+            const headerColor = colorTheme === "rose" ? "text-rose-400" : colorTheme === "emerald" ? "text-emerald-400" : "text-slate-500";
+            const borderColor = colorTheme === "rose" ? "border-rose-900" : colorTheme === "emerald" ? "border-emerald-900" : "border-slate-800";
+            
+            let html = `<table class="w-full text-left datatable ${borderColor} text-[10px]"><thead><tr>`;
+            columnas.forEach(col => html += `<th class="${headerColor} p-1">${col}</th>`);
+            html += `</tr></thead><tbody>`;
+            datos.forEach(fila => {
+                html += `<tr>`;
+                columnas.forEach(col => html += `<td class="p-1 text-slate-300">${fila[col]}</td>`);
+                html += `</tr>`;
+            });
+            html += `</tbody></table>`;
+            contenedor.innerHTML = html;
+        }
+
+        async function ejecutarJoin(tipo) {
+            const driverStatus = document.getElementById('driver-status');
+            const btnStandard = document.getElementById('btn-run-standard');
+            const btnBroadcast = document.getElementById('btn-run-broadcast');
+            const nodos = getNodosElements();
+
+            // Bloquear UI
+            btnStandard.disabled = true;
+            btnBroadcast.disabled = true;
+            resetNodosJoinVisual();
+            await ms(500);
 
             if (tipo === 'standard') {
-                log.innerText = "Fase 1: Shuffle Inciado. Redistribuyendo ambas tablas por clave en la red...";
-                [n1, n2, n3].forEach(n => n.classList.add("border-rose-500", "bg-rose-950/20"));
+                // --- SHUFFLE JOIN LÓGICA ---
+                driverStatus.innerText = "PLAN: Shuffle Hash Join detectado.\nFase 1: Tareas de Shuffle Map enviadas a nodos.";
+                driverStatus.classList.add('text-rose-300');
                 
-                await new Promise(r => setTimeout(r, 1500));
-                log.innerText = "Fase 2: Alto tráfico de red (Shuffle). Las filas viajan de nodo a nodo buscando sus claves.";
-                
-                await new Promise(r => setTimeout(r, 1500));
-                log.innerText = "Completado: Standard Join (Sort-Merge Join) finalizado. Alto coste de transferencia I/O.";
-                [n1, n2, n3].forEach(n => {
-                    n.classList.remove("border-rose-500", "bg-rose-950/20");
-                    n.classList.add("border-rose-800", "bg-rose-950/5");
+                await ms(1500);
+
+                // Paso 1: Nodos calculan Hash y preparan envío
+                nodos.forEach(n => {
+                    n.container.classList.add('anim-shuffle');
+                    n.info.innerText = "TAREA: Leyendo Ventas localmente.\nCalculando Hash(id_producto) para decidir destino...";
+                    n.info.classList.add('text-rose-300');
                 });
 
-            } else {
-                log.innerText = "Fase 1: Preparando Broadcast... La tabla pequeña se carga en memoria del Driver.";
-                await new Promise(r => setTimeout(r, 1000));
-                
-                log.innerText = "Fase 2: Transmitiendo copia completa de la tabla pequeña a TODOS los Worker Nodes de una vez...";
-                [n1, n2, n3].forEach(n => n.classList.add("border-emerald-500", "bg-emerald-950/20"));
-                
-                await new Promise(r => setTimeout(r, 1500));
-                log.innerText = "Completado: Broadcast Join exitoso. Sin fase de Shuffle de la tabla grande, unión procesada localmente en RAM.";
-                [n1, n2, n3].forEach(n => {
-                    n.classList.remove("border-emerald-500", "bg-emerald-950/20");
-                    n.classList.add("border-emerald-800", "bg-emerald-950/5");
+                await ms(2500);
+
+                // Paso 2: El Shuffle (Red)
+                driverStatus.innerText = "Fase 2: SHUFFLE ACTIVADO.\nNodos intercambiando datos por red basados en el Hash.";
+                nodos.forEach((n, i) => {
+                    n.data.innerHTML = '<div class="text-center pt-4 text-rose-400 anim-pulse font-bold text-xs"><< VIAJANDO POR RED >></div>';
+                    n.info.innerText = `TAREA: Enviando particiones a otros nodos y recibiendo datos para mi rango de Hash...`;
                 });
+
+                await ms(3000);
+
+                // Paso 3: Unión Local
+                driverStatus.innerText = "Fase 3: Shuffle completado.\nDatos agrupados por clave en nodos. Ejecutando unión local.";
+                
+                // Simulamos resultado del shuffle y join local en Nodo 1 (Productos con ID 2)
+                const resultadoNodo1 = [
+                    { id_venta: 'V01', id_producto: '2 (Laptop)', nombre_prod: 'Laptop Pro 15', monto: 1200 },
+                    { id_venta: 'V03', id_producto: '2 (Laptop)', nombre_prod: 'Laptop Pro 15', monto: 1200 },
+                ];
+                renderTablaEnContenedor(resultadoNodo1, nodos[0].data, "indigo");
+                nodos[0].info.innerText = "TAREA: Unión local finalizada para id_producto = 2.";
+
+                // Simulación Nodo 2 (Productos ID 1 y 3)
+                const resultadoNodo2 = [
+                    { id_venta: 'V02', id_producto: '1 (Mouse)', nombre_prod: 'Mouse Óptico', monto: 150 },
+                    { id_venta: 'V05', id_producto: '1 (Mouse)', nombre_prod: 'Mouse Óptico', monto: 150 },
+                    { id_venta: 'V04', id_producto: '3 (Monitor)', nombre_prod: 'Monitor 4K', monto: 500 },
+                ];
+                renderTablaEnContenedor(resultadoNodo2, nodos[1].data, "indigo");
+                nodos[1].info.innerText = "TAREA: Unión local finalizada para id_producto = 1 y 3.";
+
+                // Simulación Nodo 3 (Claves no encontradas)
+                const resultadoNodo3 = [
+                    { id_venta: 'V06', id_producto: '9 (Desconocido)', nombre_prod: 'null', monto: 9999 },
+                ];
+                renderTablaEnContenedor(resultadoNodo3, nodos[2].data, "indigo");
+                nodos[2].info.innerText = "TAREA: Unión local (Outer) finalizada. Clave 9 no hallada.";
+
+                await ms(1000);
+                nodos.forEach(n => n.container.classList.remove('anim-shuffle'));
+                driverStatus.innerText = "FINALIZADO: Shuffle Join completado.\nAlto movimiento de red detectado.";
+
+
+            } else {
+                // --- BROADCAST JOIN LÓGICA ---
+                driverStatus.innerText = "PLAN: Tabla Productos es pequeña (< spark.sql.autoBroadcastJoinThreshold).\nFase 1: Recolectando tabla Productos en el Driver.";
+                driverStatus.classList.add('text-emerald-300');
+                
+                await ms(1500);
+
+                // Paso 1: Driver hace Broadcast
+                driverStatus.innerText = "Fase 2: BROADCASTING.\nEnviando copia serializada de tabla Productos a TODOS los ejecutores.";
+                
+                nodos.forEach(n => {
+                    n.container.classList.add('anim-broadcast');
+                    n.info.innerText = "RECIBIENDO Tabla Productos por red (Broadcast)...";
+                    n.info.classList.add('text-emerald-300');
+                });
+
+                await ms(2500);
+
+                // Paso 2: Nodos tienen la tabla y unen localmente
+                driverStatus.innerText = "Fase 3: Tabla Productos en memoria RAM de cada nodo.\nUniendo Ventas (local) con Productos (RAM).";
+                
+                nodos.forEach((n, i) => {
+                    n.info.innerText = "TAREA: Uniendo partición local de Ventas usando Tabla Productos en RAM (Hash Map). Ultrarrápido.";
+                    
+                    // Mostramos la tabla Productos dentro del nodo para visualización
+                    n.localTable.classList.remove('hidden');
+                    n.localTable.innerHTML = '<div class="text-[9px] text-emerald-400 font-bold mb-1">[RAM] Tabla Productos (Broadcast):</div>';
+                    const divTabla = document.createElement('div');
+                    n.localTable.appendChild(divTabla);
+                    renderTablaEnContenedor(tablaProductosPequena, divTabla, "emerald");
+
+                    // Calculamos y mostramos el join local real de su partición
+                    const idParticion = `nodo${i+1}`;
+                    const datosVentasLocales = tablaVentasParticionada[idParticion];
+                    
+                    const resultadoJoinLocal = datosVentasLocales.map(venta => {
+                        const producto = tablaProductosPequena.find(p => p.id === venta.id_producto);
+                        return {
+                            id_venta: venta.id_venta,
+                            id_prod: venta.id_producto.split(' ')[0], // simplificar llave para visualización
+                            nombre_prod: producto ? producto.nombre_producto : 'null',
+                            monto: venta.monto
+                        };
+                    });
+                    renderTablaEnContenedor(resultadoJoinLocal, n.data, "indigo");
+                });
+
+                await ms(2000);
+                nodos.forEach(n => n.container.classList.remove('anim-broadcast'));
+                driverStatus.innerText = "FINALIZADO: Broadcast Join completado.\n¡Cero movimiento de la tabla Ventas por red!";
             }
+
+            // Desbloquear UI
+            btnStandard.disabled = false;
+            btnBroadcast.disabled = false;
         }
     </script>
 </body>
