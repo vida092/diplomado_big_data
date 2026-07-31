@@ -12,11 +12,16 @@
         .anim-shuffle { animation: pulse-red 1.5s infinite; }
         .anim-broadcast { animation: pulse-green 1.5s infinite; }
         .datatable td, .datatable th { padding: 0.5rem; border-bottom: 1px solid #1e293b; font-family: monospace; font-size: 0.75rem; }
+        
+        /* Scrollbar personalizada para la terminal */
+        #terminal-output::-webkit-scrollbar { width: 8px; }
+        #terminal-output::-webkit-scrollbar-track { background: #0f172a; }
+        #terminal-output::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen p-3 md:p-6">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen p-3 md:p-6 flex flex-col">
 
-    <div class="max-w-7xl mx-auto space-y-8">
+    <div class="max-w-7xl mx-auto space-y-8 flex-grow w-full">
         <!-- Encabezado -->
         <header class="border-b border-slate-800 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -67,11 +72,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 bg-slate-950 p-4 rounded-lg border border-slate-800">
                     <div>
                         <h3 class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-2">Tabla A: Ventas (Hechos - "Grande")</h3>
-                        <div id="data-join-ventas" class="overflow-x-auto"></div>
+                        <div id="data-join-ventas" class="overflow-x-auto max-h-48"></div>
                     </div>
                     <div>
                         <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Tabla B: Productos (Dimensión - "Pequeña")</h3>
-                        <div id="data-join-productos" class="overflow-x-auto"></div>
+                        <div id="data-join-productos" class="overflow-x-auto max-h-48"></div>
                     </div>
                 </div>
 
@@ -91,7 +96,7 @@
                 </div>
 
                 <!-- Área de Simulación de Nodos -->
-                <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 bg-slate-950 border border-slate-800 rounded-xl p-6 min-h-[400px]">
+                <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 bg-slate-950 border border-slate-800 rounded-xl p-6 min-h-[350px]">
                     <!-- Driver / Origen -->
                     <div class="xl:col-span-1 flex flex-col justify-between border-b xl:border-b-0 xl:border-r border-slate-800 pb-4 xl:pb-0 xl:pr-6">
                         <div>
@@ -116,7 +121,7 @@
                             <div id="nodo-1" class="flex flex-col border border-slate-800 rounded-lg bg-slate-900 transition-all duration-300">
                                 <div class="p-2 border-b border-slate-800 bg-slate-800/50 text-center text-xs font-bold text-slate-400">Nodo 1</div>
                                 <div class="p-3 flex-grow space-y-3">
-                                    <div class="nodo-info text-xs text-slate-500 italic">Cargando partición inicial...</div>
+                                    <div class="nodo-info text-xs text-slate-500 italic">Cargando partición...</div>
                                     <div class="nodo-data overflow-x-auto min-h-[60px]"></div>
                                     <div class="nodo-local-table overflow-x-auto min-h-[60px] hidden border-t border-slate-800 pt-2"></div>
                                 </div>
@@ -125,7 +130,7 @@
                             <div id="nodo-2" class="flex flex-col border border-slate-800 rounded-lg bg-slate-900 transition-all duration-300">
                                 <div class="p-2 border-b border-slate-800 bg-slate-800/50 text-center text-xs font-bold text-slate-400">Nodo 2</div>
                                 <div class="p-3 flex-grow space-y-3">
-                                    <div class="nodo-info text-xs text-slate-500 italic">Cargando partición inicial...</div>
+                                    <div class="nodo-info text-xs text-slate-500 italic">Cargando partición...</div>
                                     <div class="nodo-data overflow-x-auto min-h-[60px]"></div>
                                     <div class="nodo-local-table overflow-x-auto min-h-[60px] hidden border-t border-slate-800 pt-2"></div>
                                 </div>
@@ -134,7 +139,7 @@
                             <div id="nodo-3" class="flex flex-col border border-slate-800 rounded-lg bg-slate-900 transition-all duration-300">
                                 <div class="p-2 border-b border-slate-800 bg-slate-800/50 text-center text-xs font-bold text-slate-400">Nodo 3</div>
                                 <div class="p-3 flex-grow space-y-3">
-                                    <div class="nodo-info text-xs text-slate-500 italic">Cargando partición inicial...</div>
+                                    <div class="nodo-info text-xs text-slate-500 italic">Cargando partición...</div>
                                     <div class="nodo-data overflow-x-auto min-h-[60px]"></div>
                                     <div class="nodo-local-table overflow-x-auto min-h-[60px] hidden border-t border-slate-800 pt-2"></div>
                                 </div>
@@ -144,13 +149,51 @@
                 </div>
             </div>
         </section>
+
+        <!-- CONSOLA DE LOGS GLOBALES -->
+        <div class="mt-4 bg-[#0a0a0a] border border-slate-700 rounded-lg shadow-2xl flex flex-col h-48 sm:h-56">
+            <div class="bg-slate-800 px-4 py-2 border-b border-slate-700 rounded-t-lg flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span class="text-xs font-bold font-mono text-slate-300">Spark Execution Console</span>
+                </div>
+                <button onclick="limpiarConsola()" class="text-[10px] bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-md text-slate-300 transition">Limpiar Logs</button>
+            </div>
+            <div id="terminal-output" class="p-4 font-mono text-[11px] leading-relaxed text-slate-300 overflow-y-auto flex-grow space-y-1">
+                <!-- Los logs se insertarán aquí dinámicamente -->
+            </div>
+        </div>
     </div>
 
     <!-- SCRIPT INCLUIDO DIRECTAMENTE -->
     <script>
+        // --- SISTEMA DE LOGS (CONSOLA) ---
+        function writeLog(mensaje, nivel = 'INFO') {
+            const terminal = document.getElementById('terminal-output');
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            let colorClase = 'text-slate-300'; // Default INFO
+            let tagClase = 'text-blue-400';
+            
+            if (nivel === 'WARN') { colorClase = 'text-amber-300'; tagClase = 'text-amber-500'; }
+            if (nivel === 'ERROR') { colorClase = 'text-rose-400'; tagClase = 'text-rose-500'; }
+            if (nivel === 'SUCCESS') { colorClase = 'text-emerald-400'; tagClase = 'text-emerald-500'; }
+            if (nivel === 'SYSTEM') { colorClase = 'text-indigo-300'; tagClase = 'text-indigo-500'; }
+
+            const logLine = document.createElement('div');
+            logLine.innerHTML = `<span class="text-slate-600 mr-2">[${timeStr}]</span> <span class="font-bold ${tagClase} mr-2">${nivel}</span> <span class="${colorClase}">${mensaje}</span>`;
+            
+            terminal.appendChild(logLine);
+            terminal.scrollTop = terminal.scrollHeight; // Auto-scroll hacia abajo
+        }
+
+        function limpiarConsola() {
+            document.getElementById('terminal-output').innerHTML = '';
+            writeLog('Consola limpiada por el usuario.', 'SYSTEM');
+        }
+
         // --- CONFIGURACIÓN DE DATOS ---
-        
-        // Datos Pestaña 1
         const datosOriginales = [
             { id: 1, nombre: "Ana", edad: 28, salario: 45000 },
             { id: 2, nombre: "Carlos", edad: 22, salario: 30000 },
@@ -159,28 +202,23 @@
             { id: 5, nombre: "Elena", edad: 24, salario: 32000 }
         ];
 
-        // Claves constantes para fácil lectura (DEBEN IR ANTES DE LA TABLA)
-        const P1 = '1 (Mouse)', P2 = '2 (Laptop)', P3 = '3 (Monitor)', P9 = '9 (Desconocido)';
+        const P1 = '1 (Mouse)', P2 = '2 (Laptop)', P3 = '3 (Monitor)', P9 = '9 (Desc.)';
 
-        // Datos Pestaña 2 (JOIN)
-        // Simulamos que Ventas está distribuida inicialmente
         const tablaVentasParticionada = {
             nodo1: [
-                { id_venta: 'V01', id_producto: P2, monto: 1200 }, // P2 = Laptop
-                { id_venta: 'V02', id_producto: P1, monto: 150 }   // P1 = Mouse
+                { id_venta: 'V01', id_producto: P2, monto: 1200 },
+                { id_venta: 'V02', id_producto: P1, monto: 150 }
             ],
             nodo2: [
-                { id_venta: 'V03', id_producto: P2, monto: 1200 }, // P2 = Laptop
-                { id_venta: 'V04', id_producto: P3, monto: 500 }   // P3 = Monitor
+                { id_venta: 'V03', id_producto: P2, monto: 1200 },
+                { id_venta: 'V04', id_producto: P3, monto: 500 }
             ],
             nodo3: [
-                { id_venta: 'V05', id_producto: P1, monto: 150 },   // P1 = Mouse
-                { id_venta: 'V06', id_producto: P9, monto: 9999 }  // P9 = NO EXISTE (para ver nulls)
+                { id_venta: 'V05', id_producto: P1, monto: 150 },
+                { id_venta: 'V06', id_producto: P9, monto: 9999 }
             ]
         };
 
-        // Unimos todo para mostrar la tabla completa "Grande" en el Driver
-        // (Corregido el error tipográfico aquí)
         const tablaVentasCompleta = [...tablaVentasParticionada.nodo1, ...tablaVentasParticionada.nodo2, ...tablaVentasParticionada.nodo3];
 
         const tablaProductosPequena = [
@@ -191,14 +229,14 @@
 
         // --- INICIALIZACIÓN ---
         window.onload = function() {
-            // Tab 1
             renderTablaGeneric(datosOriginales, "tabla-origen");
             renderTablaGeneric(datosOriginales, "tabla-resultado");
-            
-            // Tab 2 - Datos de entrada
             renderTablaGeneric(tablaVentasCompleta, "data-join-ventas", "rose");
             renderTablaGeneric(tablaProductosPequena, "data-join-productos", "emerald");
             resetNodosJoinVisual();
+            
+            writeLog('SparkSession iniciada correctamente. Conectado al clúster (3 Workers).', 'SYSTEM');
+            writeLog('UI de visualización lista.', 'INFO');
         };
 
         // --- UTILIDADES DE UI ---
@@ -211,13 +249,15 @@
             if (tab === 'transf') {
                 secTransf.classList.remove("hidden");
                 secJoin.classList.add("hidden");
-                btnTransf.className = "px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white transition";
-                btnJoin.className = "px-4 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-white transition";
+                btnTransf.className = "flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white transition";
+                btnJoin.className = "flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-white transition";
+                writeLog('Cambiando contexto a: Operaciones Básicas', 'INFO');
             } else {
                 secTransf.classList.add("hidden");
                 secJoin.classList.remove("hidden");
-                btnJoin.className = "px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white transition";
-                btnTransf.className = "px-4 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-white transition";
+                btnJoin.className = "flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md bg-indigo-600 text-white transition";
+                btnTransf.className = "flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md text-slate-400 hover:text-white transition";
+                writeLog('Cambiando contexto a: Operaciones Distribuidas (Joins)', 'INFO');
             }
         }
 
@@ -243,51 +283,6 @@
             contenedor.innerHTML = html;
         }
 
-        // --- LÓGICA TAB 1: TRANSFORMACIONES ---
-        function ejecutarOp(tipo) {
-            let resultado = [...datosOriginales];
-            switch(tipo) {
-                case 'select': resultado = resultado.map(item => ({ id: item.id, nombre: item.nombre })); break;
-                case 'filter': resultado = resultado.filter(item => item.edad > 25); break;
-                case 'drop': resultado = resultado.map(({ salario, ...resto }) => resto); break;
-                case 'orderby': resultado.sort((a, b) => b.edad - a.edad); break;
-                case 'reset': default: break;
-            }
-            renderTablaGeneric(resultado, "tabla-resultado", "indigo");
-        }
-
-        // --- LÓGICA TAB 2: SIMULADOR DE JOINS ---
-
-        const ms = (millisecons) => new Promise(r => setTimeout(r, millisecons));
-        
-        function getNodosElements() {
-            return [1, 2, 3].map(i => ({
-                container: document.getElementById(`nodo-${i}`),
-                info: document.querySelector(`#nodo-${i} .nodo-info`),
-                data: document.querySelector(`#nodo-${i} .nodo-data`),
-                localTable: document.querySelector(`#nodo-${i} .nodo-local-table`)
-            }));
-        }
-
-        function resetNodosJoinVisual() {
-            const nodos = getNodosElements();
-            document.getElementById('driver-status').innerText = "Estado: Listos para empezar.";
-            document.getElementById('driver-status').className = "p-3 bg-slate-900 border border-slate-800 rounded text-slate-300 font-mono text-[11px]";
-            
-            nodos.forEach((nodo, index) => {
-                const idNodo = `nodo${index + 1}`;
-                nodo.container.className = "flex flex-col border border-slate-800 rounded-lg bg-slate-900 transition-all duration-300";
-                nodo.info.innerText = "Partición inicial (Tabla Ventas):";
-                nodo.info.className = "nodo-info text-xs text-slate-400 font-semibold";
-                nodo.localTable.classList.add('hidden');
-                nodo.localTable.innerHTML = '';
-                
-                // Limpiamos antes de re-renderizar
-                nodo.data.innerHTML = '';
-                renderTablaEnContenedor(tablaVentasParticionada[idNodo], nodo.data, "rose");
-            });
-        }
-
         function renderTablaEnContenedor(datos, contenedor, colorTheme = "slate") {
             if (!datos || datos.length === 0) {
                 contenedor.innerHTML = `<div class="p-1 text-center text-[10px] text-slate-600">Sin filas</div>`;
@@ -309,82 +304,139 @@
             contenedor.innerHTML = html;
         }
 
+        // --- LÓGICA TAB 1: TRANSFORMACIONES ---
+        function ejecutarOp(tipo) {
+            let resultado = [...datosOriginales];
+            switch(tipo) {
+                case 'select': 
+                    resultado = resultado.map(item => ({ id: item.id, nombre: item.nombre })); 
+                    writeLog('Ejecutando: df.select("id", "nombre")', 'INFO');
+                    break;
+                case 'filter': 
+                    resultado = resultado.filter(item => item.edad > 25); 
+                    writeLog('Ejecutando: df.filter(col("edad") > 25)', 'INFO');
+                    break;
+                case 'drop': 
+                    resultado = resultado.map(({ salario, ...resto }) => resto); 
+                    writeLog('Ejecutando: df.drop("salario")', 'INFO');
+                    break;
+                case 'orderby': 
+                    resultado.sort((a, b) => b.edad - a.edad); 
+                    writeLog('Ejecutando: df.orderBy(col("edad").desc())', 'INFO');
+                    break;
+                case 'reset': 
+                    writeLog('Reseteando DataFrame al estado original.', 'SYSTEM');
+                    break;
+            }
+            renderTablaGeneric(resultado, "tabla-resultado", "indigo");
+        }
+
+        // --- LÓGICA TAB 2: SIMULADOR DE JOINS ---
+        const ms = (millisecons) => new Promise(r => setTimeout(r, millisecons));
+        
+        function getNodosElements() {
+            return [1, 2, 3].map(i => ({
+                container: document.getElementById(`nodo-${i}`),
+                info: document.querySelector(`#nodo-${i} .nodo-info`),
+                data: document.querySelector(`#nodo-${i} .nodo-data`),
+                localTable: document.querySelector(`#nodo-${i} .nodo-local-table`)
+            }));
+        }
+
+        function resetNodosJoinVisual() {
+            const nodos = getNodosElements();
+            document.getElementById('driver-status').innerText = "Estado: Listos para procesar.";
+            document.getElementById('driver-status').className = "p-3 bg-slate-900 border border-slate-800 rounded text-slate-300 font-mono text-[11px]";
+            
+            nodos.forEach((nodo, index) => {
+                const idNodo = `nodo${index + 1}`;
+                nodo.container.className = "flex flex-col border border-slate-800 rounded-lg bg-slate-900 transition-all duration-300";
+                nodo.info.innerText = "Partición inicial (Tabla Ventas):";
+                nodo.info.className = "nodo-info text-xs text-slate-400 font-semibold";
+                nodo.localTable.classList.add('hidden');
+                nodo.localTable.innerHTML = '';
+                nodo.data.innerHTML = '';
+                renderTablaEnContenedor(tablaVentasParticionada[idNodo], nodo.data, "rose");
+            });
+        }
+
         async function ejecutarJoin(tipo) {
             const driverStatus = document.getElementById('driver-status');
             const btnStandard = document.getElementById('btn-run-standard');
             const btnBroadcast = document.getElementById('btn-run-broadcast');
             const nodos = getNodosElements();
 
-            // Bloquear UI
             btnStandard.disabled = true;
             btnBroadcast.disabled = true;
             resetNodosJoinVisual();
+            writeLog('--- INICIANDO TRABAJO DE SPARK ---', 'SYSTEM');
             await ms(500);
 
             if (tipo === 'standard') {
-                // --- SHUFFLE JOIN LÓGICA ---
+                writeLog('Catalyst Optimizer: Evaluando join tipo SortMergeJoin/ShuffleHashJoin.', 'INFO');
+                writeLog('DAGScheduler: Enviando tareas ShuffleMapStage (Stage 1) a 3 workers.', 'INFO');
                 driverStatus.innerText = "PLAN: Shuffle Hash Join detectado.\nFase 1: Tareas de Shuffle Map enviadas a nodos.";
                 driverStatus.classList.add('text-rose-300');
                 
                 await ms(1500);
 
-                // Paso 1: Nodos calculan Hash
+                writeLog('BlockManager: Los nodos están leyendo sus particiones de HDFS/S3 y calculando particiones de hash.', 'INFO');
                 nodos.forEach(n => {
                     n.container.classList.add('anim-shuffle');
-                    n.info.innerText = "TAREA: Leyendo Ventas localmente.\nCalculando Hash(id_producto) para decidir destino...";
+                    n.info.innerText = "TAREA: Leyendo Ventas.\nCalculando Hash(id_producto) para decidir destino...";
                     n.info.classList.add('text-rose-300');
                 });
 
                 await ms(2500);
 
-                // Paso 2: El Shuffle
+                writeLog('Network: ALERTA - Movimiento masivo de datos detectado (SHUFFLE INTER-NODO).', 'WARN');
                 driverStatus.innerText = "Fase 2: SHUFFLE ACTIVADO.\nNodos intercambiando datos por red basados en el Hash.";
                 nodos.forEach((n, i) => {
                     n.data.innerHTML = '<div class="text-center pt-4 text-rose-400 anim-pulse font-bold text-xs"><< VIAJANDO POR RED >></div>';
-                    n.info.innerText = `TAREA: Enviando particiones a otros nodos y recibiendo datos para mi rango de Hash...`;
+                    n.info.innerText = `TAREA: Intercambiando particiones (Shuffle Write/Read)...`;
                 });
 
                 await ms(3000);
 
-                // Paso 3: Unión Local
+                writeLog('DAGScheduler: ResultStage (Stage 2) enviado para unión local.', 'INFO');
                 driverStatus.innerText = "Fase 3: Shuffle completado.\nDatos agrupados por clave en nodos. Ejecutando unión local.";
                 
-                // Nodo 1
                 const resultadoNodo1 = [
                     { id_venta: 'V01', id_producto: '2 (Laptop)', nombre_prod: 'Laptop Pro 15', monto: 1200 },
                     { id_venta: 'V03', id_producto: '2 (Laptop)', nombre_prod: 'Laptop Pro 15', monto: 1200 },
                 ];
                 renderTablaEnContenedor(resultadoNodo1, nodos[0].data, "indigo");
-                nodos[0].info.innerText = "TAREA: Unión local finalizada para id_producto = 2.";
+                nodos[0].info.innerText = "TAREA: Unión local finalizada para Hash -> id_producto = 2.";
 
-                // Nodo 2
                 const resultadoNodo2 = [
                     { id_venta: 'V02', id_producto: '1 (Mouse)', nombre_prod: 'Mouse Óptico', monto: 150 },
                     { id_venta: 'V05', id_producto: '1 (Mouse)', nombre_prod: 'Mouse Óptico', monto: 150 },
                     { id_venta: 'V04', id_producto: '3 (Monitor)', nombre_prod: 'Monitor 4K', monto: 500 },
                 ];
                 renderTablaEnContenedor(resultadoNodo2, nodos[1].data, "indigo");
-                nodos[1].info.innerText = "TAREA: Unión local finalizada para id_producto = 1 y 3.";
+                nodos[1].info.innerText = "TAREA: Unión local finalizada para Hash -> id_producto = 1 y 3.";
 
-                // Nodo 3
                 const resultadoNodo3 = [
-                    { id_venta: 'V06', id_producto: '9 (Desconocido)', nombre_prod: 'null', monto: 9999 },
+                    { id_venta: 'V06', id_producto: '9 (Desc.)', nombre_prod: 'null', monto: 9999 },
                 ];
                 renderTablaEnContenedor(resultadoNodo3, nodos[2].data, "indigo");
-                nodos[2].info.innerText = "TAREA: Unión local (Outer) finalizada. Clave 9 no hallada.";
+                nodos[2].info.innerText = "TAREA: Unión local finalizada. Clave 9 no hallada.";
 
                 await ms(1000);
                 nodos.forEach(n => n.container.classList.remove('anim-shuffle'));
+                writeLog('Job Completado. Operación de red muy costosa debido al Shuffle Phase.', 'SUCCESS');
                 driverStatus.innerText = "FINALIZADO: Shuffle Join completado.\nAlto movimiento de red detectado.";
 
             } else {
-                // --- BROADCAST JOIN LÓGICA ---
-                driverStatus.innerText = "PLAN: Tabla Productos es pequeña (< spark.sql.autoBroadcastJoinThreshold).\nFase 1: Recolectando tabla Productos en el Driver.";
+                writeLog('Ejecutando: df_ventas.join(broadcast(df_productos), "id_producto")', 'INFO');
+                writeLog('Catalyst Optimizer: Tabla Productos < spark.sql.autoBroadcastJoinThreshold.', 'SUCCESS');
+                driverStatus.innerText = "PLAN: Broadcast Join detectado.\nFase 1: Recolectando tabla Productos en el Driver.";
                 driverStatus.classList.add('text-emerald-300');
                 
                 await ms(1500);
 
-                // Paso 1: Driver hace Broadcast
+                writeLog('SparkContext: Recolectando Tabla B en Driver.', 'INFO');
+                writeLog('BroadcastManager: Transmitiendo copia serializada a 3 Ejecutores.', 'INFO');
                 driverStatus.innerText = "Fase 2: BROADCASTING.\nEnviando copia serializada de tabla Productos a TODOS los ejecutores.";
                 
                 nodos.forEach(n => {
@@ -395,11 +447,11 @@
 
                 await ms(2500);
 
-                // Paso 2: Nodos tienen la tabla y unen localmente
+                writeLog('DAGScheduler: Enviando tareas ResultStage. SHUFFLE EVITADO COMPLETAMENTE.', 'SUCCESS');
                 driverStatus.innerText = "Fase 3: Tabla Productos en memoria RAM de cada nodo.\nUniendo Ventas (local) con Productos (RAM).";
                 
                 nodos.forEach((n, i) => {
-                    n.info.innerText = "TAREA: Uniendo partición local de Ventas usando Tabla Productos en RAM (Hash Map). Ultrarrápido.";
+                    n.info.innerText = "TAREA: Uniendo partición local contra Tabla Productos en memoria RAM. Ultrarrápido.";
                     
                     n.localTable.classList.remove('hidden');
                     n.localTable.innerHTML = '<div class="text-[9px] text-emerald-400 font-bold mb-1">[RAM] Tabla Productos (Broadcast):</div>';
@@ -424,10 +476,10 @@
 
                 await ms(2000);
                 nodos.forEach(n => n.container.classList.remove('anim-broadcast'));
+                writeLog('Job Completado. Alta eficiencia (Cero I/O de red por Shuffle).', 'SUCCESS');
                 driverStatus.innerText = "FINALIZADO: Broadcast Join completado.\n¡Cero movimiento de la tabla Ventas por red!";
             }
 
-            // Desbloquear UI
             btnStandard.disabled = false;
             btnBroadcast.disabled = false;
         }
