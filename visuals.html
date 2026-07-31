@@ -159,28 +159,29 @@
             { id: 5, nombre: "Elena", edad: 24, salario: 32000 }
         ];
 
-        // Datos Pestaña 2 (JOIN) con llaves claras
+        // Claves constantes para fácil lectura (DEBEN IR ANTES DE LA TABLA)
+        const P1 = '1 (Mouse)', P2 = '2 (Laptop)', P3 = '3 (Monitor)', P9 = '9 (Desconocido)';
+
+        // Datos Pestaña 2 (JOIN)
         // Simulamos que Ventas está distribuida inicialmente
         const tablaVentasParticionada = {
             nodo1: [
-                { id_venta: 'V01', id_producto: "P2", monto: 1200 }, // P2 = Laptop
-                { id_venta: 'V02', id_producto: "P1", monto: 150 }   // P1 = Mouse
+                { id_venta: 'V01', id_producto: P2, monto: 1200 }, // P2 = Laptop
+                { id_venta: 'V02', id_producto: P1, monto: 150 }   // P1 = Mouse
             ],
             nodo2: [
-                { id_venta: 'V03', id_producto: "P2", monto: 1200 }, // P2 = Laptop
-                { id_venta: 'V04', id_producto: "P3", monto: 500 }   // P3 = Monitor
+                { id_venta: 'V03', id_producto: P2, monto: 1200 }, // P2 = Laptop
+                { id_venta: 'V04', id_producto: P3, monto: 500 }   // P3 = Monitor
             ],
             nodo3: [
-                { id_venta: 'V05', id_producto: "P1", monto: 150 },   // P1 = Mouse
-                { id_venta: 'V06', id_producto: "P9", monto: 9999 }  // P9 = NO EXISTE (para ver nulls)
+                { id_venta: 'V05', id_producto: P1, monto: 150 },   // P1 = Mouse
+                { id_venta: 'V06', id_producto: P9, monto: 9999 }  // P9 = NO EXISTE (para ver nulls)
             ]
         };
 
-        // Claves constantes para fácil lectura
-        const P1 = '1 (Mouse)', P2 = '2 (Laptop)', P3 = '3 (Monitor)', P9 = '9 (Desconocido)';
-
         // Unimos todo para mostrar la tabla completa "Grande" en el Driver
-        const tablaVentasCompleta = [...tablaVentasParticionParticionada.nodo1, ...tablaVentasParticionada.nodo2, ...tablaVentasParticionada.nodo3];
+        // (Corregido el error tipográfico aquí)
+        const tablaVentasCompleta = [...tablaVentasParticionada.nodo1, ...tablaVentasParticionada.nodo2, ...tablaVentasParticionada.nodo3];
 
         const tablaProductosPequena = [
             { id: '1 (Mouse)', nombre_producto: "Mouse Óptico", precio: 20 },
@@ -280,16 +281,13 @@
                 nodo.info.className = "nodo-info text-xs text-slate-400 font-semibold";
                 nodo.localTable.classList.add('hidden');
                 nodo.localTable.innerHTML = '';
-                renderTablaGeneric(tablaVentasParticionada[idNodo], nodo.data.id || `data-n${index+1}`); // HACK: renderTabla necesita ID, pero aquí inyectamos directo
-                // Corregimos el renderizado directo en el nodo
-                renderTablaGeneric(tablaVentasParticionada[idNodo], ''); 
-                nodo.data.innerHTML = nodo.data.previousSibling.previousSibling ? '' : nodo.data.innerHTML; // Limpieza si renderTabla falló por ID vacío
-                // Re-render correcto inyectando HTML
+                
+                // Limpiamos antes de re-renderizar
+                nodo.data.innerHTML = '';
                 renderTablaEnContenedor(tablaVentasParticionada[idNodo], nodo.data, "rose");
             });
         }
 
-        // Versión modificada de renderTabla para inyectar directamente en elemento, no por ID
         function renderTablaEnContenedor(datos, contenedor, colorTheme = "slate") {
             if (!datos || datos.length === 0) {
                 contenedor.innerHTML = `<div class="p-1 text-center text-[10px] text-slate-600">Sin filas</div>`;
@@ -330,7 +328,7 @@
                 
                 await ms(1500);
 
-                // Paso 1: Nodos calculan Hash y preparan envío
+                // Paso 1: Nodos calculan Hash
                 nodos.forEach(n => {
                     n.container.classList.add('anim-shuffle');
                     n.info.innerText = "TAREA: Leyendo Ventas localmente.\nCalculando Hash(id_producto) para decidir destino...";
@@ -339,7 +337,7 @@
 
                 await ms(2500);
 
-                // Paso 2: El Shuffle (Red)
+                // Paso 2: El Shuffle
                 driverStatus.innerText = "Fase 2: SHUFFLE ACTIVADO.\nNodos intercambiando datos por red basados en el Hash.";
                 nodos.forEach((n, i) => {
                     n.data.innerHTML = '<div class="text-center pt-4 text-rose-400 anim-pulse font-bold text-xs"><< VIAJANDO POR RED >></div>';
@@ -351,7 +349,7 @@
                 // Paso 3: Unión Local
                 driverStatus.innerText = "Fase 3: Shuffle completado.\nDatos agrupados por clave en nodos. Ejecutando unión local.";
                 
-                // Simulamos resultado del shuffle y join local en Nodo 1 (Productos con ID 2)
+                // Nodo 1
                 const resultadoNodo1 = [
                     { id_venta: 'V01', id_producto: '2 (Laptop)', nombre_prod: 'Laptop Pro 15', monto: 1200 },
                     { id_venta: 'V03', id_producto: '2 (Laptop)', nombre_prod: 'Laptop Pro 15', monto: 1200 },
@@ -359,7 +357,7 @@
                 renderTablaEnContenedor(resultadoNodo1, nodos[0].data, "indigo");
                 nodos[0].info.innerText = "TAREA: Unión local finalizada para id_producto = 2.";
 
-                // Simulación Nodo 2 (Productos ID 1 y 3)
+                // Nodo 2
                 const resultadoNodo2 = [
                     { id_venta: 'V02', id_producto: '1 (Mouse)', nombre_prod: 'Mouse Óptico', monto: 150 },
                     { id_venta: 'V05', id_producto: '1 (Mouse)', nombre_prod: 'Mouse Óptico', monto: 150 },
@@ -368,7 +366,7 @@
                 renderTablaEnContenedor(resultadoNodo2, nodos[1].data, "indigo");
                 nodos[1].info.innerText = "TAREA: Unión local finalizada para id_producto = 1 y 3.";
 
-                // Simulación Nodo 3 (Claves no encontradas)
+                // Nodo 3
                 const resultadoNodo3 = [
                     { id_venta: 'V06', id_producto: '9 (Desconocido)', nombre_prod: 'null', monto: 9999 },
                 ];
@@ -378,7 +376,6 @@
                 await ms(1000);
                 nodos.forEach(n => n.container.classList.remove('anim-shuffle'));
                 driverStatus.innerText = "FINALIZADO: Shuffle Join completado.\nAlto movimiento de red detectado.";
-
 
             } else {
                 // --- BROADCAST JOIN LÓGICA ---
@@ -404,14 +401,12 @@
                 nodos.forEach((n, i) => {
                     n.info.innerText = "TAREA: Uniendo partición local de Ventas usando Tabla Productos en RAM (Hash Map). Ultrarrápido.";
                     
-                    // Mostramos la tabla Productos dentro del nodo para visualización
                     n.localTable.classList.remove('hidden');
                     n.localTable.innerHTML = '<div class="text-[9px] text-emerald-400 font-bold mb-1">[RAM] Tabla Productos (Broadcast):</div>';
                     const divTabla = document.createElement('div');
                     n.localTable.appendChild(divTabla);
                     renderTablaEnContenedor(tablaProductosPequena, divTabla, "emerald");
 
-                    // Calculamos y mostramos el join local real de su partición
                     const idParticion = `nodo${i+1}`;
                     const datosVentasLocales = tablaVentasParticionada[idParticion];
                     
@@ -419,7 +414,7 @@
                         const producto = tablaProductosPequena.find(p => p.id === venta.id_producto);
                         return {
                             id_venta: venta.id_venta,
-                            id_prod: venta.id_producto.split(' ')[0], // simplificar llave para visualización
+                            id_prod: venta.id_producto.split(' ')[0], 
                             nombre_prod: producto ? producto.nombre_producto : 'null',
                             monto: venta.monto
                         };
