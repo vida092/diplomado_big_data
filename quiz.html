@@ -239,9 +239,6 @@
 <script>
 /* ============================================================
    BANCO DE PREGUNTAS  —  Sesiones 1 a 3
-   type: "concept" | "code"
-   code: (opcional) usa "◻" donde va el hueco a completar
-   correct: índice de la opción correcta
    ============================================================ */
 const QUESTIONS = [
   {
@@ -463,7 +460,24 @@ const QUESTIONS = [
 ];
 
 /* ============================================================
-   ESTADO Y RENDER
+   SHUFFLE  —  baraja las opciones de cada pregunta (Fisher-Yates)
+
+   ============================================================ */
+function shuffleQuestions(){
+  QUESTIONS.forEach(q=>{
+    // empaquetamos cada opción con su marca de "correcta"
+    const pack = q.options.map((opt,i)=>({opt, ok:i===q.correct}));
+    for(let i=pack.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [pack[i],pack[j]] = [pack[j],pack[i]];
+    }
+    q.options = pack.map(p=>p.opt);
+    q.correct = pack.findIndex(p=>p.ok);
+  });
+}
+
+/* ============================================================
+   ESTADO 
    ============================================================ */
 const app = document.getElementById('app');
 const state = { screen:'start', idx:0, answers:new Array(QUESTIONS.length).fill(null) };
@@ -504,7 +518,7 @@ function partitionBar(){
   return html;
 }
 
-/* ---------- Pantalla de inicio ---------- */
+/* ---------- Pantalla  ---------- */
 function renderStart(){
   app.innerHTML = `
     <div class="card">
@@ -575,7 +589,7 @@ function renderQuestion(){
     </div>`;
 }
 
-/* ---------- Pantalla de resultados ---------- */
+/* ---------- resultados ---------- */
 function renderResults(){
   const total = QUESTIONS.length;
   const score = state.answers.reduce((acc,a,i)=>acc + (a===QUESTIONS[i].correct?1:0),0);
@@ -626,7 +640,7 @@ function renderResults(){
     </div>`;
 }
 
-/* ---------- Controladores ---------- */
+/* ---------- Controladors ---------- */
 function render(){
   if(state.screen==='start') renderStart();
   else if(state.screen==='quiz') renderQuestion();
@@ -637,7 +651,7 @@ function start(){ state.screen='quiz'; state.idx=0; render(); }
 function answer(i){
   if(state.answers[state.idx]!==null) return;
   state.answers[state.idx]=i;
-  renderQuestion(); // re-render sin scroll para no perder de vista el feedback
+  renderQuestion(); // re-render sin scroll 
   const btn=document.getElementById('nextBtn'); if(btn) btn.focus();
 }
 function next(){
@@ -645,12 +659,13 @@ function next(){
   if(state.idx < QUESTIONS.length-1){ state.idx++; render(); }
   else { state.screen='results'; render(); }
 }
-function restart(){ state.screen='start'; state.idx=0; state.answers=new Array(QUESTIONS.length).fill(null); render(); }
+function restart(){ shuffleQuestions(); state.screen='start'; state.idx=0; state.answers=new Array(QUESTIONS.length).fill(null); render(); }
 function reviewFirstWrong(){
   const i = state.answers.findIndex((a,k)=>a!==QUESTIONS[k].correct);
   if(i>=0){ state.screen='quiz'; state.idx=i; render(); }
 }
 
+shuffleQuestions();
 render();
 </script>
 </body>
