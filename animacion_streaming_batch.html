@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streaming = batch incremental</title>
+<style>
+  :root{
+    --bg:#f7f6f2; --panel:#ffffff; --ink:#2b2b28; --muted:#6f6e69;
+    --line:#e2e0d8; --line2:#cfcdc4;
+    --amber:#f3f0e6; --amber-b:#c98a12; --amber-ink:#7a5308;
+    --gray:#eeede8; --gray-b:#b4b2a9; --gray-ink:#5f5e5a;
+    --teal:#e1f5ee; --teal-b:#1d9e75; --teal-ink:#0f6e56;
+    --blue:#378add; --blue-ink:#0c447c;
+    --shadow:0 1px 2px rgba(0,0,0,.05);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5; padding:24px;
+  }
+  .wrap{max-width:1040px; margin:0 auto}
+  header h1{font-size:26px; font-weight:600; margin:0 0 4px}
+  header p{font-size:16px; color:var(--muted); margin:0 0 20px}
+  header .thesis{color:var(--ink)}
+  header .thesis b{color:var(--teal-ink); font-weight:600}
+
+  .stage{
+    display:grid; grid-template-columns:1fr 0.9fr 1.2fr; gap:16px; align-items:stretch;
+    margin-bottom:16px;
+  }
+  .zone{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:16px; box-shadow:var(--shadow); display:flex; flex-direction:column;
+  }
+  .zone h2{font-size:14px; font-weight:600; margin:0; text-transform:none}
+  .zone .sub{font-size:12px; color:var(--muted); margin:0 0 12px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+  /* Zona de llegadas */
+  #stack{display:flex; flex-direction:column; gap:8px; min-height:220px; justify-content:flex-start}
+  .file{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    border-radius:8px; padding:9px 12px; font-size:14px;
+    border:1px solid var(--line2); background:var(--panel);
+    transition:transform .35s ease, background .35s ease, border-color .35s ease, opacity .35s ease;
+  }
+  .file.nuevo{background:var(--amber); border-color:var(--amber-b); color:var(--amber-ink)}
+  .file.proc{background:var(--gray); border-color:var(--gray-b); color:var(--gray-ink)}
+  .file.reading{transform:translateX(10px) scale(1.03); border-color:var(--teal-b); box-shadow:0 0 0 3px var(--teal)}
+  .file .hrs{font-size:12px; opacity:.8; font-family:ui-monospace,Menlo,monospace}
+  .file .lock{font-size:13px}
+  .checkpoint{
+    display:flex; align-items:center; gap:8px; font-size:12px; color:var(--amber-ink);
+    border-top:2px dashed var(--amber-b); padding-top:6px; margin-top:2px;
+  }
+  .checkpoint .flag{font-weight:600}
+
+  /* Motor */
+  #motor{
+    margin:auto 0; text-align:center; border:1px dashed var(--line2); border-radius:12px;
+    padding:22px 12px; transition:background .3s, border-color .3s;
+  }
+  #motor.active{background:var(--teal); border-color:var(--teal-b)}
+  #motor .icon{font-size:30px; line-height:1}
+  #motor .state{font-size:13px; color:var(--muted); margin-top:8px; min-height:18px}
+  #motor.active .state{color:var(--teal-ink); font-weight:600}
+
+  /* Resultados */
+  .chart{display:flex; align-items:flex-end; gap:14px; height:180px; padding:0 6px; border-bottom:1px solid var(--line2)}
+  .bar-col{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%}
+  .bar{width:100%; max-width:44px; background:var(--blue); border-radius:5px 5px 0 0; height:0; transition:height .45s ease}
+  .bar-val{font-size:13px; font-weight:600; color:var(--blue-ink); margin-bottom:4px; min-height:17px}
+  .bar-lbl{font-size:12px; color:var(--muted); margin-top:6px}
+  .counters{display:flex; gap:12px; margin-top:16px}
+  .counter{flex:1; background:var(--bg); border-radius:10px; padding:10px 12px}
+  .counter .k{font-size:12px; color:var(--muted)}
+  .counter .v{font-size:26px; font-weight:600}
+  .counter.leido .v{color:var(--amber-ink)}
+  .counter.acum  .v{color:var(--teal-ink)}
+
+  /* Controles */
+  .controls{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:4px}
+  button{
+    font:inherit; font-size:15px; font-weight:500; cursor:pointer;
+    border:1px solid var(--line2); background:var(--panel); color:var(--ink);
+    padding:10px 18px; border-radius:10px; transition:background .15s, transform .1s;
+  }
+  button:hover:not(:disabled){background:var(--bg)}
+  button:active:not(:disabled){transform:scale(.98)}
+  button:disabled{opacity:.45; cursor:not-allowed}
+  button.primary{background:var(--teal-ink); color:#fff; border-color:var(--teal-ink)}
+  button.primary:hover:not(:disabled){background:#0c5a45}
+  .status{
+    flex-basis:100%; margin-top:12px; font-size:15px; color:var(--ink);
+    background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--teal-b);
+    border-radius:0 8px 8px 0; padding:10px 14px; min-height:22px;
+  }
+  .legend{display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:14px}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .sw{width:14px; height:14px; border-radius:3px; border:1px solid}
+  .sw.a{background:var(--amber); border-color:var(--amber-b)}
+  .sw.g{background:var(--gray); border-color:var(--gray-b)}
+
+  @media (max-width:820px){ .stage{grid-template-columns:1fr} #motor{margin:0} }
+  @media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Streaming = batch incremental</h1>
+    <p class="thesis">El flujo lee <b>solo lo nuevo</b>, pero el resultado <b>acumula</b> — porque el checkpoint recuerda y los archivos no cambian.</p>
+  </header>
+
+  <div class="stage">
+    <!-- ZONA 1: LLEGADAS -->
+    <section class="zone">
+      <h2>Zona de llegadas</h2>
+      <p class="sub">/tmp/llegadas</p>
+      <div id="stack"></div>
+    </section>
+
+    <!-- ZONA 2: MOTOR -->
+    <section class="zone">
+      <h2>El motor</h2>
+      <p class="sub">Trigger.AvailableNow()</p>
+      <div id="motor">
+        <div class="icon">&#9881;</div>
+        <div class="state" id="motor-state">en reposo</div>
+      </div>
+    </section>
+
+    <!-- ZONA 3: RESULTADOS -->
+    <section class="zone">
+      <h2>Resultados</h2>
+      <p class="sub">viajes por hora</p>
+      <div class="chart" id="chart"></div>
+      <div class="counters">
+        <div class="counter leido">
+          <div class="k">leído en esta corrida</div>
+          <div class="v" id="c-leido">0</div>
+        </div>
+        <div class="counter acum">
+          <div class="k">acumulado total</div>
+          <div class="v" id="c-acum">0</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="controls">
+    <button id="btn-ola" onclick="soltarOla()">Soltar ola de datos</button>
+    <button id="btn-run" class="primary" onclick="correrFlujo()">Correr flujo (AvailableNow)</button>
+    <button id="btn-reset" onclick="reiniciar()">Reiniciar</button>
+    <div class="status" id="status">Suelta la primera ola de datos para empezar.</div>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw a"></i> nuevo, por leer</span>
+    <span><i class="sw g"></i> procesado (inmutable)</span>
+    <span> ; = archivo congelado en disco</span>
+    <span style="color:var(--amber-ink)">— — checkpoint = memoria del flujo</span>
+  </div>
+</div>
+
+<script>
+// ---- Modelo de datos: números chicos, verificables a mano ----
+const HOURS = [8, 9, 10, 11];
+const WAVES = [
+  [ {name:'archivo 1', hours:{8:2, 9:1}},
+    {name:'archivo 2', hours:{9:1, 10:1}},
+    {name:'archivo 3', hours:{8:1}} ],
+  [ {name:'archivo 4', hours:{10:2, 11:1}},
+    {name:'archivo 5', hours:{11:2}} ]
+];
+const REDUCE = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+let files = [];          // {name, hours, total, processed}
+let waveIdx = 0;         // cuántas olas se han soltado
+let checkpointIndex = 0; // archivos ya procesados (el checkpoint va después de estos)
+let aggregate = {8:0, 9:0, 10:0, 11:0};
+let leido = 0;
+let running = false;
+
+const $ = id => document.getElementById(id);
+const total = h => Object.values(h).reduce((a,b)=>a+b, 0);
+const sumAgg = () => Object.values(aggregate).reduce((a,b)=>a+b, 0);
+const sleep = ms => new Promise(r => setTimeout(r, REDUCE ? 0 : ms));
+
+function initChart(){
+  const c = $('chart'); c.innerHTML = '';
+  HOURS.forEach(h => {
+    const col = document.createElement('div'); col.className = 'bar-col';
+    col.innerHTML = `<div class="bar-val" id="v-${h}"></div>
+                     <div class="bar" id="b-${h}"></div>
+                     <div class="bar-lbl">${h} h</div>`;
+    c.appendChild(col);
+  });
+}
+
+function renderBars(){
+  const max = 3;                 // conteo máximo posible por hora en este ejemplo
+  const px = 170 / max;          // escala vertical
+  HOURS.forEach(h => {
+    const val = aggregate[h];
+    $('b-'+h).style.height = (val * px) + 'px';
+    $('v-'+h).textContent = val > 0 ? val : '';
+  });
+}
+
+function renderFiles(){
+  const stack = $('stack'); stack.innerHTML = '';
+  files.forEach((f, i) => {
+    // La línea de checkpoint va justo antes del primer archivo pendiente
+    if (checkpointIndex > 0 && i === checkpointIndex) {
+      stack.appendChild(makeCheckpoint());
+    }
+    const el = document.createElement('div');
+    el.className = 'file ' + (f.processed ? 'proc' : 'nuevo');
+    el.id = 'f-' + i;
+    const hrs = Object.entries(f.hours).map(([h,c]) => `${h}h×${c}`).join('  ');
+    el.innerHTML = `<span>${f.name} ${f.processed ? '<span class="lock"> ;</span>' : ''}</span>
+                    <span class="hrs">${hrs}</span>`;
+    stack.appendChild(el);
+  });
+  // Si todo está procesado, el checkpoint va al final
+  if (checkpointIndex > 0 && checkpointIndex === files.length){
+    stack.appendChild(makeCheckpoint());
+  }
+}
+
+function makeCheckpoint(){
+  const cp = document.createElement('div');
+  cp.className = 'checkpoint';
+  cp.innerHTML = `<span class="flag">&#9873; checkpoint</span>
+                  <span>procesado hasta aquí (${checkpointIndex})</span>`;
+  return cp;
+}
+
+function updateCounters(){
+  $('c-leido').textContent = leido;
+  $('c-acum').textContent  = sumAgg();
+}
+
+function setStatus(msg){ $('status').innerHTML = msg; }
+function motor(active, txt){
+  $('motor').classList.toggle('active', active);
+  $('motor-state').textContent = txt || 'en reposo';
+}
+function lock(on){
+  running = on;
+  $('btn-ola').disabled = on;
+  $('btn-run').disabled = on;
+  $('btn-reset').disabled = on;
+}
+
+// ---- Acciones ----
+function soltarOla(){
+  if (running) return;
+  if (waveIdx >= WAVES.length){
+    setStatus('No hay más olas en este ejemplo. Puedes <b>correr el flujo</b> o <b>reiniciar</b>.');
+    return;
+  }
+  const w = WAVES[waveIdx++];
+  w.forEach(spec => files.push({name:spec.name, hours:spec.hours, total:total(spec.hours), processed:false}));
+  renderFiles();
+  const pend = files.filter(f => !f.processed).length;
+  const nombre = waveIdx === 1 ? 'primera' : 'segunda';
+  setStatus(`Llegó la <b>${nombre} ola</b>: ${w.length} archivos nuevos e inmutables. ` +
+            `Pendientes por leer: <b>${pend}</b>. ¿Cuántos leerá el flujo?`);
+}
+
+async function correrFlujo(){
+  if (running) return;
+  const pend = files.filter(f => !f.processed);
+  if (pend.length === 0){
+    setStatus('No hay archivos nuevos: el flujo <b>no lee nada</b>. Suelta una ola primero.');
+    leido = 0; updateCounters();
+    return;
+  }
+  lock(true);
+  const yaProc = files.filter(f => f.processed).length;
+
+  // Mostrar que lo ya procesado se omite (el "salto" del checkpoint)
+  if (yaProc > 0){
+    setStatus(`El checkpoint recuerda <b>${yaProc}</b> archivos ya leídos → <b>se omiten</b>. ` +
+              `Solo se leerá lo nuevo.`);
+    await sleep(1100);
+  }
+
+  leido = 0; updateCounters();
+  let lote = 0;
+  for (let i = 0; i < files.length; i++){
+    const f = files[i];
+    if (f.processed) continue;         // el motor salta lo viejo
+    lote++;
+    motor(true, `leyendo micro-lote ${lote}`);
+    const card = $('f-' + i);
+    if (card) card.classList.add('reading');
+    await sleep(700);
+
+    // Procesar el archivo (agregación incremental)
+    for (const [h, c] of Object.entries(f.hours)) aggregate[h] += c;
+    leido += f.total;
+    renderBars(); updateCounters();
+
+    // Congelar el archivo: pasa a procesado + inmutable, avanza el checkpoint
+    if (card) card.classList.remove('reading');
+    f.processed = true;
+    checkpointIndex++;
+    renderFiles();
+    await sleep(450);
+  }
+
+  motor(false, 'en reposo');
+  setStatus(`Corrida lista. Leído en esta corrida: <b>${leido}</b> (solo lo nuevo). ` +
+            `Acumulado total: <b>${sumAgg()}</b>. Mismo motor, mismo resultado que un batch completo.`);
+  lock(false);
+}
+
+function reiniciar(){
+  if (running) return;
+  files = []; waveIdx = 0; checkpointIndex = 0;
+  aggregate = {8:0, 9:0, 10:0, 11:0}; leido = 0;
+  initChart(); renderBars(); renderFiles(); updateCounters();
+  motor(false, 'en reposo');
+  setStatus('Reiniciado. Suelta la primera ola de datos para empezar.');
+}
+
+// ---- Arranque ----
+initChart(); renderBars(); renderFiles(); updateCounters();
+</script>
+</body>
+</html>
