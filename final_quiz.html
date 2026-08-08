@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz · Diplomado de Computación en Paralelo y Apache Spark</title>
+<style>
+  :root{
+    --spark:#e25a1c; --spark2:#f2a900; --ink:#1f2933; --muted:#5b6b7a;
+    --line:#dbe6ee; --bg:#0f3d5c; --ok:#2c8a4a; --okbg:#eef7f0;
+    --bad:#c53f3f; --badbg:#fdeeee; --card:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Helvetica Neue",Arial,sans-serif;color:var(--ink);
+    background:linear-gradient(160deg,#0f3d5c 0%,#14577d 100%);min-height:100vh;
+    display:flex;align-items:flex-start;justify-content:center;padding:28px 14px;}
+  .app{width:100%;max-width:720px;background:var(--card);border-radius:16px;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);overflow:hidden;}
+  header{background:linear-gradient(90deg,var(--spark),var(--spark2));color:#fff;padding:20px 24px;}
+  header h1{margin:0;font-size:18px;letter-spacing:.2px;}
+  header p{margin:4px 0 0;font-size:12.5px;opacity:.95;}
+  .body{padding:22px 24px 26px;}
+  /* progreso tipo particiones */
+  .prog-wrap{margin-bottom:18px;}
+  .prog-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .prog-parts{display:flex;gap:3px;}
+  .part{flex:1;height:9px;border-radius:3px;background:#e6edf2;transition:background .25s;}
+  .part.done{background:var(--spark2);}
+  .part.current{background:var(--spark);}
+  .badge{display:inline-block;font-size:11px;font-weight:700;color:var(--bg);
+    background:#eaf1f6;border:1px solid var(--line);border-radius:999px;padding:2px 10px;margin-bottom:12px;}
+  .q{font-size:16.5px;font-weight:600;line-height:1.45;margin:0 0 16px;}
+  .q code, .opt code, .explain code{background:#eef3f7;border:1px solid var(--line);border-radius:4px;
+    padding:0 5px;font-family:"SF Mono",Consolas,monospace;font-size:.9em;color:#14577d;}
+  pre{background:#0f2b3d;color:#e8f0f6;border-radius:9px;padding:12px 14px;overflow:auto;
+    font-family:"SF Mono",Consolas,monospace;font-size:13px;line-height:1.5;margin:0 0 16px;}
+  pre .blank{color:var(--spark2);font-weight:700;}
+  .opts{display:flex;flex-direction:column;gap:10px;}
+  .opt{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:10px;
+    padding:12px 14px;font-size:14.5px;cursor:pointer;transition:all .15s;color:var(--ink);}
+  .opt:hover:not(:disabled){border-color:var(--spark);background:#fff8f3;}
+  .opt:disabled{cursor:default;}
+  .opt.correct{border-color:var(--ok);background:var(--okbg);}
+  .opt.wrong{border-color:var(--bad);background:var(--badbg);}
+  .opt .mark{float:right;font-weight:700;}
+  .explain{margin-top:16px;padding:12px 14px;border-radius:10px;font-size:13.5px;line-height:1.5;
+    background:#f6f9fb;border:1px solid var(--line);display:none;}
+  .explain.show{display:block;}
+  .explain.ok{background:var(--okbg);border-color:#bfe3ca;}
+  .explain.no{background:var(--badbg);border-color:#f2c9c9;}
+  .explain b{color:var(--bg);}
+  .row{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px;}
+  .btn{background:var(--spark);color:#fff;border:none;border-radius:10px;padding:11px 22px;
+    font-size:14.5px;font-weight:600;cursor:pointer;transition:filter .15s;}
+  .btn:hover{filter:brightness(1.07);}
+  .btn.ghost{background:#eef3f7;color:var(--bg);}
+  .btn:disabled{opacity:.4;cursor:default;}
+  .score{font-size:13px;color:var(--muted);}
+  /* intro / resultados */
+  .center{text-align:center;padding:14px 6px;}
+  .big{font-size:44px;font-weight:800;color:var(--bg);margin:6px 0;}
+  .center p{color:var(--muted);font-size:14px;line-height:1.55;}
+  .review{margin-top:20px;text-align:left;}
+  .review h3{font-size:14px;color:var(--bg);border-bottom:2px solid var(--line);padding-bottom:6px;}
+  .rev-item{border:1px solid var(--line);border-left:4px solid var(--bad);border-radius:8px;
+    padding:11px 13px;margin:10px 0;font-size:13.5px;line-height:1.5;background:#fff;}
+  .rev-item .qq{font-weight:600;margin-bottom:6px;}
+  .rev-item .cc{color:var(--ok);}
+  .hide{display:none;}
+  footer{padding:12px 24px;border-top:1px solid var(--line);font-size:11px;color:#9fb0bd;text-align:center;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Quiz · Computación en Paralelo y Apache Spark</h1>
+    <p>Repaso integral del diplomado — Sesiones 1 a 6</p>
+  </header>
+  <div class="body">
+
+    <!-- INTRO -->
+    <div id="intro" class="center">
+      <div class="big" id="introTotal">—</div>
+      <p>preguntas de todo el curso: paralelismo, arquitectura de Spark, DataFrames,
+         streaming vs. batch y optimización.<br>
+         Las preguntas y las opciones se <b>barajan</b> cada vez que empiezas.</p>
+      <div class="row" style="justify-content:center;">
+        <button class="btn" onclick="start()">Comenzar</button>
+      </div>
+    </div>
+
+    <div id="quiz" class="hide">
+      <div class="prog-wrap">
+        <div class="prog-label"><span id="progText">Partición 1</span><span id="scoreText">0 aciertos</span></div>
+        <div class="prog-parts" id="progParts"></div>
+      </div>
+      <span class="badge" id="sessionBadge">Sesión</span>
+      <div class="q" id="qText"></div>
+      <div class="opts" id="opts"></div>
+      <div class="explain" id="explain"></div>
+      <div class="row">
+        <span class="score" id="miniScore"></span>
+        <button class="btn" id="nextBtn" onclick="next()" disabled>Siguiente</button>
+      </div>
+    </div>
+
+    <!-- RESULTADOS -->
+    <div id="results" class="hide">
+      <div class="center">
+        <div class="big" id="finalScore">0 / 0</div>
+        <p id="finalMsg"></p>
+        <button class="btn" onclick="restart()">Reiniciar quiz</button>
+      </div>
+      <div class="review" id="review"></div>
+    </div>
+
+  </div>
+  <footer>Divide · Procesa · Junta — todo Spark es eso.</footer>
+</div>
+
+<script>
+/* ====================== BANCO DE PREGUNTAS ======================
+   correct = índice de la respuesta correcta en 'options' (antes de barajar). */
+const QUESTIONS = [
+  // ---------- Sesión 1 · Paralelismo ----------
+  {s:"Sesión 1", q:"¿Cuándo conviene paralelizar un trabajo?",
+   options:["Cuando el trabajo es grande, divisible e independiente",
+            "Siempre: paralelizar es siempre más rápido",
+            "Solo cuando trabajas con una sola fila a la vez",
+            "Cuando el resultado cabe en Excel"],
+   correct:0,
+   explain:"Paralelizar ayuda cuando el trabajo es <b>grande, divisible e independiente</b>. Si es chico o los pasos dependen unos de otros, el overhead no compensa."},
+
+  {s:"Sesión 1", q:"La \"regla de oro\" de la Sesión 1: ¿qué determina cuánto paralelismo tienes?",
+   options:["El número de particiones","La cantidad de columnas","El nombre del clúster","El tamaño de la pantalla"],
+   correct:0,
+   explain:"El <b>número de particiones</b> es cuántos pedazos se procesan en paralelo. Es la palanca base del paralelismo."},
+
+  {s:"Sesión 1", q:"¿Por qué Spark puede ser MÁS lento que un script secuencial sobre datos pequeños?",
+   options:["Porque el costo de dividir y coordinar supera al beneficio",
+            "Porque Spark no sabe leer archivos chicos",
+            "Porque siempre usa una sola máquina",
+            "Porque Parquet no funciona con pocos datos"],
+   correct:0,
+   explain:"En datos chicos, el <b>overhead</b> de repartir, mover y coordinar pesa más que el trabajo mismo. Si cabe en Excel, úsalo en Excel."},
+
+  {s:"Sesión 1", q:"Los tres verbos que resumen todo lo que hace Spark son:",
+   options:["Dividir, procesar, juntar","Leer, borrar, imprimir","Comprimir, cifrar, enviar","Ordenar, filtrar, graficar"],
+   correct:0,
+   explain:"<b>Dividir → procesar → juntar.</b> Toda operación distribuida en Spark es una variación de esos tres pasos."},
+
+  {s:"Sesión 1", q:"Escalar de forma HORIZONTAL significa:",
+   options:["Agregar más máquinas (nodos) al clúster",
+            "Comprar una sola máquina mucho más potente",
+            "Aumentar el tamaño del monitor",
+            "Reducir el número de columnas"],
+   correct:0,
+   explain:"Escalabilidad <b>horizontal</b> = más máquinas trabajando juntas. La <b>vertical</b> es hacer más grande una sola máquina."},
+
+  // ---------- Sesión 2 · Arquitectura ----------
+  {s:"Sesión 2", q:"En la arquitectura de Spark, ¿quién coordina el trabajo y quién lo ejecuta?",
+   options:["El Driver coordina; los Executors ejecutan",
+            "Los Executors coordinan; el Driver ejecuta",
+            "El Cluster Manager ejecuta todo solo",
+            "El usuario ejecuta cada tarea a mano"],
+   correct:0,
+   explain:"El <b>Driver</b> planea y coordina; los <b>Executors</b> hacen el trabajo en paralelo. El Cluster Manager reparte recursos."},
+
+  {s:"Sesión 2", q:"Con la evaluación perezosa (lazy), ¿cuándo ejecuta Spark realmente el trabajo?",
+   options:["Hasta que se llama una acción (count, collect, escribir)",
+            "En cuanto escribes la primera transformación",
+            "Cada vez que defines una variable",
+            "Nunca, hasta que reinicias el clúster"],
+   correct:0,
+   explain:"Las transformaciones solo <b>construyen la receta</b>. Spark ejecuta hasta que una <b>acción</b> lo obliga."},
+
+  {s:"Sesión 2", q:"¿Cuál de estas es una ACCIÓN (no una transformación)?",
+   options:["<code>count()</code>","<code>select()</code>","<code>filter()</code>","<code>withColumn()</code>"],
+   correct:0,
+   explain:"<code>count()</code> es una <b>acción</b>: dispara el cálculo. <code>select</code>, <code>filter</code> y <code>withColumn</code> solo describen la transformación."},
+
+  {s:"Sesión 2", q:"Según la taxonomía de agregaciones, ¿cuál es HOLÍSTICA (no se puede combinar por partes)?",
+   options:["La mediana","La suma","El conteo","El promedio"],
+   correct:0,
+   explain:"La <b>mediana</b> es holística: exige ver todos los datos juntos. Suma y conteo son distributivas; el promedio es algebraico."},
+
+  {s:"Sesión 2", q:"Para REDUCIR el número de particiones evitando un shuffle completo, conviene usar:",
+   options:["<code>coalesce()</code>","<code>repartition()</code>","<code>groupBy()</code>","<code>explode()</code>"],
+   correct:0,
+   explain:"<code>coalesce()</code> junta particiones sin barajar todo. <code>repartition()</code> sí hace shuffle completo (útil para subir particiones o rebalancear)."},
+
+  // ---------- Sesión 3 · DataFrames intermedio ----------
+  {s:"Sesión 3", q:"¿Qué formato es COLUMNAR y permite leer solo las columnas que pides (poda de columnas)?",
+   options:["Parquet","CSV","JSON","TXT"],
+   correct:0,
+   explain:"<b>Parquet</b> guarda por columnas: si pides 2, lee 2. CSV y JSON guardan por filas y obligan a recorrer todo."},
+
+  {s:"Sesión 3", q:"Unir una tabla grande con una chica copiando la chica a cada máquina se llama:",
+   options:["Broadcast join (BroadcastHashJoin)","Shuffle join (SortMergeJoin)","Cross join","Self join"],
+   correct:0,
+   explain:"El <b>broadcast join</b> difunde la tabla chica y evita barajar la grande. En el plan aparece como <code>BroadcastHashJoin</code>."},
+
+  {s:"Sesión 3", q:"¿Qué componente traduce PySpark y Spark SQL al MISMO plan físico?",
+   options:["Catalyst","Tungsten","El Driver","El Cluster Manager"],
+   correct:0,
+   explain:"<b>Catalyst</b> es el compilador de consultas: por eso escribir en PySpark o en Spark SQL da el mismo plan y rinde igual."},
+
+  {s:"Sesión 3", q:"Completa: para difundir una tabla chica en un join.<br><pre>viajes.join(<span class='blank'>____</span>(zonas), \"pickup_zip\")</pre>",
+   options:["<code>F.broadcast</code>","<code>F.explode</code>","<code>F.col</code>","<code>F.when</code>"],
+   correct:0,
+   explain:"<code>F.broadcast(zonas)</code> le pide a Spark difundir la dimensión chica. El resultado es un <code>BroadcastHashJoin</code>."},
+
+  {s:"Sesión 3", q:"En una función de ventana, <code>PARTITION BY</code> corresponde a qué paso de \"divide y vencerás\"?",
+   options:["Dividir","Procesar","Juntar","Borrar"],
+   correct:0,
+   explain:"<code>PARTITION BY</code> es literalmente el paso de <b>dividir</b>: reparte las filas en grupos antes de calcular sobre cada uno."},
+
+  // ---------- Sesión 4 · Streaming vs Batch ----------
+  {s:"Sesión 4", q:"En Spark, el procesamiento en streaming es, en el fondo:",
+   options:["Procesamiento por lotes incremental (micro-batches)",
+            "Un motor totalmente distinto al de batch",
+            "Cálculo fila por fila sin particiones",
+            "Una hoja de cálculo en tiempo real"],
+   correct:0,
+   explain:"Structured Streaming corre el <b>mismo motor</b> en micro-lotes: es batch aplicado de forma incremental sobre lo nuevo."},
+
+  {s:"Sesión 4", q:"¿Qué propiedad de los archivos hace posible el streaming incremental?",
+   options:["La inmutabilidad: lo escrito no cambia",
+            "Que los archivos se puedan editar en vivo",
+            "Que estén siempre comprimidos",
+            "Que se borren tras leerse"],
+   correct:0,
+   explain:"El streaming incremental descansa en la <b>inmutabilidad</b>: como los archivos ya escritos no cambian, Spark solo procesa los nuevos."},
+
+  {s:"Sesión 4", q:"El <i>watermark</i> (marca de agua) en streaming sirve para:",
+   options:["Manejar datos que llegan tarde y descartar estado viejo",
+            "Ponerle una imagen de fondo al reporte",
+            "Cifrar los datos en tránsito",
+            "Aumentar el número de particiones"],
+   correct:0,
+   explain:"El <b>watermark</b> define hasta cuándo esperar datos tardíos (event time) y cuándo liberar el estado acumulado."},
+
+  {s:"Sesión 4", q:"En Databricks Free Edition (serverless), el único trigger de streaming soportado es:",
+   options:["<code>Trigger.AvailableNow()</code>","<code>Trigger.Continuous()</code>","<code>Trigger.ProcessingTime()</code>","Ninguno: no hay streaming"],
+   correct:0,
+   explain:"Serverless solo admite <code>Trigger.AvailableNow()</code>: procesa lo disponible y se detiene. Un buen punto de entrada al trade-off costo/latencia."},
+
+  {s:"Sesión 4", q:"Si resuelves el MISMO cálculo en batch y en streaming, los resultados deberían ser:",
+   options:["Idénticos, porque es el mismo motor",
+            "Siempre distintos",
+            "El de streaming siempre mayor",
+            "Imposibles de comparar"],
+   correct:0,
+   explain:"Mismo motor, mismas reglas: batch y streaming producen el <b>mismo resultado</b>. Cambia el <i>cuándo</i>, no el <i>qué</i>."},
+
+  // ---------- Sesiones 5–6 · Optimización ----------
+  {s:"Sesión 5", q:"La operación MÁS cara de Spark, porque los datos cruzan la red, es:",
+   options:["El shuffle (aparece como <code>Exchange</code>)","La lectura de una sola columna","Definir una variable","Imprimir un DataFrame"],
+   correct:0,
+   explain:"El <b>shuffle</b> mueve datos entre máquinas para juntarlos por llave. En el plan es <code>Exchange</code>, y es lo primero que hay que minimizar."},
+
+  {s:"Sesión 5", q:"Además de Catalyst, ¿qué hace que el plan corra eficiente, pegado al hardware?",
+   options:["Tungsten","Kafka","El watermark","El coalesce"],
+   correct:0,
+   explain:"<b>Tungsten</b> es el motor de ejecución: gestiona memoria y CPU para que el plan que armó Catalyst corra rápido."},
+
+  {s:"Sesión 6", q:"La frase que gobierna la optimización es \"No optimices lo que no has medido\". El primer paso es:",
+   options:["Medir la línea base (cronometrar antes de tocar nada)",
+            "Cambiar todas las configuraciones de golpe",
+            "Borrar los datos y empezar de cero",
+            "Aumentar las columnas del resultado"],
+   correct:0,
+   explain:"Primero <b>mides</b>. Sin línea base no sabes si un cambio ayudó, lo dejó igual o lo empeoró."},
+
+  {s:"Sesión 6", q:"En un plan de ejecución, <code>PushedFilters</code> significa que:",
+   options:["El filtro bajó hasta el disco y descarta filas antes de subirlas (bueno)",
+            "Hay un error en la consulta",
+            "Se están leyendo todas las columnas",
+            "Se agregó un shuffle extra"],
+   correct:0,
+   explain:"<code>PushedFilters</code> es <b>predicate pushdown</b>: el filtro ocurre al leer, así se suben menos filas. Es señal de una lectura eficiente."},
+
+  {s:"Sesión 6", q:"En serverless no hay <code>cache()</code> en memoria. Para no recalcular un intermedio que reutilizas conviene:",
+   options:["Materializarlo a Parquet en <code>/tmp</code> una vez y releerlo",
+            "Repetir el cálculo cada vez, no hay alternativa",
+            "Aumentar el número de columnas",
+            "Convertirlo a CSV para que pese más"],
+   correct:0,
+   explain:"El equivalente serverless del cache es <b>materializar</b>: escribes el intermedio filtrado una vez y relees ese archivo chico en cada uso."},
+
+  {s:"Sesión 6", q:"En Databricks serverless, AQE (el \"copiloto\", Adaptive Query Execution):",
+   options:["Está siempre encendido y no se puede apagar",
+            "Hay que activarlo a mano en cada consulta",
+            "No existe en Spark",
+            "Solo funciona en streaming"],
+   correct:0,
+   explain:"En serverless AQE está <b>siempre encendido</b>: ajusta el plan mientras corre (difunde tablas chicas, colapsa particiones, maneja skew) y no se puede desactivar."},
+
+  {s:"Sesión 6", q:"¿Cuál de estas es \"tu mitad\" del trabajo, la que AQE NO decide por ti?",
+   options:["Leer menos: poda de columnas y filtrar temprano",
+            "Difundir automáticamente las tablas chicas",
+            "Colapsar las particiones vacías del shuffle",
+            "Repartir los datos desbalanceados (skew)"],
+   correct:0,
+   explain:"AQE hace lo mecánico (broadcast, particiones, skew). <b>Tu criterio</b> decide qué leer, qué materializar y qué aproximar."},
+
+  {s:"Sesión 6", q:"Completa: leer del Parquet solo las columnas necesarias.<br><pre>spark.read.parquet(ruta).<span class='blank'>____</span>(\"pickup_zip\",\"fare_amount\")</pre>",
+   options:["<code>select</code>","<code>groupBy</code>","<code>write</code>","<code>explode</code>"],
+   correct:0,
+   explain:"<code>select(...)</code> es la <b>poda de columnas</b>: con Parquet, pedir 2 columnas lee solo esas del disco."},
+
+  {s:"Sesión 6", q:"Para volver barato un cálculo holístico caro como la mediana, se puede:",
+   options:["Usar una métrica aproximada (<code>percentile_approx</code>)",
+            "Agregar más columnas al resultado",
+            "Convertir el DataFrame a RDD",
+            "Quitar todos los filtros"],
+   correct:0,
+   explain:"Las versiones <b>aproximadas</b> (<code>percentile_approx</code>, <code>approx_count_distinct</code>) convierten un cálculo holístico en uno barato, con error mínimo."}
+];
+
+let quiz=[], i=0, score=0, missed=[], answered=false;
+
+function shuffle(a){
+  for(let k=a.length-1;k>0;k--){
+    const j=Math.floor(Math.random()*(k+1));
+    [a[k],a[j]]=[a[j],a[k]];
+  }
+  return a;
+}
+
+function buildQuiz(){
+  // copia profunda + baraja el ORDEN de las preguntas
+  const qs = shuffle(QUESTIONS.map(o=>({...o, options:[...o.options]})));
+  // baraja las OPCIONES de cada pregunta y recalcula el índice correcto
+  qs.forEach(item=>{
+    const correctText = item.options[item.correct];
+    shuffle(item.options);
+    item.correct = item.options.indexOf(correctText);
+  });
+  return qs;
+}
+
+document.getElementById('introTotal').textContent = QUESTIONS.length;
+
+function start(){
+  quiz = buildQuiz(); i=0; score=0; missed=[];
+  document.getElementById('intro').classList.add('hide');
+  document.getElementById('results').classList.add('hide');
+  document.getElementById('quiz').classList.remove('hide');
+  buildProgress();
+  render();
+}
+
+function buildProgress(){
+  const wrap=document.getElementById('progParts'); wrap.innerHTML='';
+  quiz.forEach(()=>{const d=document.createElement('div'); d.className='part'; wrap.appendChild(d);});
+}
+
+function render(){
+  answered=false;
+  const item=quiz[i];
+  // progreso
+  const parts=document.querySelectorAll('.part');
+  parts.forEach((p,k)=>{p.className='part'+(k<i?' done':(k===i?' current':''));});
+  document.getElementById('progText').textContent = `Partición ${i+1} de ${quiz.length}`;
+  document.getElementById('scoreText').textContent = `${score} ${score===1?'acierto':'aciertos'}`;
+  document.getElementById('sessionBadge').textContent = item.s;
+  document.getElementById('qText').innerHTML = item.q;
+  // opciones
+  const box=document.getElementById('opts'); box.innerHTML='';
+  item.options.forEach((opt,idx)=>{
+    const b=document.createElement('button');
+    b.className='opt'; b.innerHTML=opt; b.onclick=()=>choose(idx);
+    box.appendChild(b);
+  });
+  const ex=document.getElementById('explain'); ex.className='explain'; ex.innerHTML='';
+  document.getElementById('nextBtn').disabled=true;
+  document.getElementById('nextBtn').textContent = (i===quiz.length-1)?'Ver resultados':'Siguiente';
+  document.getElementById('miniScore').textContent='';
+}
+
+function choose(idx){
+  if(answered) return;
+  answered=true;
+  const item=quiz[i];
+  const buttons=document.querySelectorAll('.opt');
+  const correct=item.correct;
+  buttons.forEach((b,k)=>{
+    b.disabled=true;
+    if(k===correct){b.classList.add('correct'); b.innerHTML+=" <span class='mark'>&#10003;</span>";}
+    if(k===idx && idx!==correct){b.classList.add('wrong'); b.innerHTML+=" <span class='mark'>&#10007;</span>";}
+  });
+  const ex=document.getElementById('explain');
+  if(idx===correct){
+    score++;
+    ex.className='explain show ok';
+    ex.innerHTML="<b>&#10003; Correcto.</b> "+item.explain;
+  }else{
+    ex.className='explain show no';
+    ex.innerHTML="<b>&#10007; No exactamente.</b> "+item.explain;
+    missed.push({q:item.q, correct:item.options[correct], explain:item.explain, s:item.s});
+  }
+  document.getElementById('scoreText').textContent = `${score} ${score===1?'acierto':'aciertos'}`;
+  document.getElementById('miniScore').textContent = `${i+1} / ${quiz.length}`;
+  document.getElementById('nextBtn').disabled=false;
+}
+
+function next(){
+  if(!answered) return;
+  if(i<quiz.length-1){ i++; render(); }
+  else{ showResults(); }
+}
+
+function showResults(){
+  document.getElementById('quiz').classList.add('hide');
+  const r=document.getElementById('results'); r.classList.remove('hide');
+  const pct=Math.round(score/quiz.length*100);
+  document.getElementById('finalScore').textContent = `${score} / ${quiz.length}`;
+  let msg;
+  if(pct===100) msg="¡Perfecto! Dominas el arco completo del diplomado. 🎯";
+  else if(pct>=80) msg=`¡Muy bien! ${pct}% — tienes clara la lente de dividir, procesar y juntar.`;
+  else if(pct>=60) msg=`${pct}% — buen avance. Repasa las que fallaste abajo y vuelve a intentar.`;
+  else msg=`${pct}% — vale la pena repasar. Abajo están las respuestas correctas.`;
+  document.getElementById('finalMsg').textContent=msg;
+  // repaso de las falladas
+  const rev=document.getElementById('review');
+  if(missed.length===0){ rev.innerHTML="<h3>Sin errores — nada que repasar. 👏</h3>"; return; }
+  let html=`<h3>Para repasar (${missed.length})</h3>`;
+  missed.forEach(m=>{
+    html+=`<div class="rev-item"><div class="qq">${m.q}</div>`+
+          `<div>Respuesta correcta: <span class="cc">${m.correct}</span></div>`+
+          `<div style="margin-top:6px;color:#5b6b7a;">${m.explain}</div></div>`;
+  });
+  rev.innerHTML=html;
+}
+
+function restart(){ start(); }
+</script>
+</body>
+</html>
