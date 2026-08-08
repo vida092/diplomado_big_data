@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark: Evaluación Perezosa y Materialización (Staging)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 15px;
+            margin: 0 5px;
+            cursor: pointer;
+            background-color: #0052cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #003d99; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        #cluster {
+            position: relative;
+            width: 900px;
+            height: 450px;
+            margin: 0 auto;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .node {
+            position: absolute;
+            border: 2px solid #333;
+            border-radius: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        #raw-data {
+            width: 120px;
+            height: 300px;
+            left: 20px;
+            top: 50px;
+            background: #fffbe6;
+            border-style: dashed;
+        }
+        
+        #executors {
+            width: 140px;
+            height: 120px;
+            left: 360px;
+            top: 140px;
+            background: #e6f7ff;
+        }
+
+        #staging {
+            width: 140px;
+            height: 80px;
+            left: 360px;
+            top: 320px;
+            background: #f9f0ff;
+            border-style: dotted;
+            border-color: #722ed1;
+            color: #722ed1;
+        }
+        
+        .report {
+            width: 120px;
+            height: 100px;
+            right: 30px;
+            background: #f6ffed;
+        }
+        #report-a { top: 50px; }
+        #report-b { top: 250px; }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            background-color: #1890ff; /* Dato crudo */
+            transition: left 0.8s linear, top 0.8s linear, background-color 0.3s;
+            z-index: 10;
+        }
+        .particle.processed {
+            background-color: #52c41a; /* Dato procesado/limpio */
+            width: 12px;
+            height: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Optimización en Spark: Evitar Recálculos (Staging / Caché)</h2>
+    <div class="controls">
+        <button id="btn-recalc" onclick="runRecalculation()">1. Sin Materializar (Recálculo doble)</button>
+        <button id="btn-staging" onclick="runStaging()">2. Con Staging (Escritura temporal)</button>
+        <button onclick="reset()">Reiniciar</button>
+    </div>
+
+    <div id="cluster">
+        <div class="node" id="raw-data">Tabla Gigante<br><small>(Almacenamiento Crudo)</small></div>
+        
+        <div class="node" id="executors">Clúster Spark<br><small>(Filtros y Procesamiento)</small></div>
+        
+        <div class="node" id="staging">Staging / /tmp<br><small>(Parquet Intermedio)</small></div>
+
+        <div class="node report" id="report-a">Acción 1:<br>Reporte A</div>
+        <div class="node report" id="report-b">Acción 2:<br>Reporte B</div>
+    </div>
+
+    <script>
+        const cluster = document.getElementById('cluster');
+        
+        // Coordenadas base
+        const rawX = 100;
+        const execX = 400;
+        const stagingX = 400;
+        const reportX = 750;
+        
+        const rawY = 200;
+        const execY = 200;
+        const stagingY = 360;
+        const reportAY = 100;
+        const reportBY = 300;
+
+        let particles = [];
+
+        function createParticle(x, y, isProcessed = false) {
+            const p = document.createElement('div');
+            p.className = 'particle' + (isProcessed ? ' processed' : '');
+            p.style.left = x + 'px';
+            p.style.top = y + 'px';
+            cluster.appendChild(p);
+            return p;
+        }
+
+        function disableButtons(ms) {
+            document.querySelectorAll('button').forEach(b => b.disabled = true);
+            setTimeout(() => {
+                document.querySelectorAll('button').forEach(b => b.disabled = false);
+            }, ms);
+        }
+
+        function spawnSwarm(startX, startY, midX, midY, endX, endY, count, delayStart, transformAtMid = false) {
+            for(let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    let p = createParticle(startX + (Math.random()*40 - 20), startY + (Math.random()*200 - 100));
+                    particles.push(p);
+                    
+                    // Viaje al punto intermedio
+                    setTimeout(() => {
+                        p.style.left = midX + 'px';
+                        p.style.top = (midY + (Math.random()*40 - 20)) + 'px';
+                        
+                        if(transformAtMid) p.classList.add('processed');
+                        
+                        // Viaje al destino final
+                        setTimeout(() => {
+                            p.style.left = endX + 'px';
+                            p.style.top = (endY + (Math.random()*40 - 20)) + 'px';
+                        }, 900);
+                        
+                    }, 100);
+                }, delayStart + (i * 50));
+            }
+        }
+
+        // Animación 1: Recálculo (La tabla grande se lee entera DOS veces)
+        function runRecalculation() {
+            reset();
+            disableButtons(5500);
+            
+            // Acción 1: Leer todo crudo -> Procesar -> Reporte A
+            spawnSwarm(rawX, rawY, execX, execY, reportX, reportAY, 25, 0, true);
+            
+            // Acción 2: Spark olvidó el intermedio. Vuelve a leer todo crudo -> Procesar -> Reporte B
+            setTimeout(() => {
+                spawnSwarm(rawX, rawY, execX, execY, reportX, reportBY, 25, 0, true);
+            }, 3000); // Inicia después de que termine el Reporte A
+        }
+
+        // Animación 2: Staging (La tabla grande se lee UNA vez, se guarda un resumen)
+        function runStaging() {
+            reset();
+            disableButtons(5500);
+            
+            // Fase de Materialización: Leer todo crudo -> Procesar -> Guardar en Staging
+            spawnSwarm(rawX, rawY, execX, execY, stagingX, stagingY, 25, 0, true);
+            
+            // Acción 1: Leer desde el Staging (ya filtrado) -> Reporte A
+            setTimeout(() => {
+                for(let i = 0; i < 5; i++) { // Muchos menos datos viajando!
+                    setTimeout(() => {
+                        let p = createParticle(stagingX, stagingY, true);
+                        particles.push(p);
+                        setTimeout(() => {
+                            p.style.left = reportX + 'px';
+                            p.style.top = (reportAY + (Math.random()*40 - 20)) + 'px';
+                        }, 100);
+                    }, i * 150);
+                }
+            }, 2500);
+            
+            // Acción 2: Leer desde el Staging (ya filtrado) -> Reporte B
+            setTimeout(() => {
+                for(let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        let p = createParticle(stagingX, stagingY, true);
+                        particles.push(p);
+                        setTimeout(() => {
+                            p.style.left = reportX + 'px';
+                            p.style.top = (reportBY + (Math.random()*40 - 20)) + 'px';
+                        }, 100);
+                    }, i * 150);
+                }
+            }, 3500);
+        }
+
+        function reset() {
+            particles.forEach(p => p.remove());
+            particles = [];
+        }
+    </script>
+</body>
+</html>

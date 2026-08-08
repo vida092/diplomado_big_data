@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark: Shuffle vs Agregación Local</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 0 10px;
+            cursor: pointer;
+            background-color: #0052cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #003d99; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        #cluster {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            margin: 0 auto;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .node {
+            position: absolute;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: #e6f7ff;
+            padding: 10px;
+            font-weight: bold;
+        }
+        .worker {
+            width: 120px;
+            height: 80px;
+            left: 50px;
+        }
+        #w1 { top: 30px; }
+        #w2 { top: 150px; }
+        #w3 { top: 270px; }
+        
+        #driver {
+            width: 150px;
+            height: 320px;
+            right: 50px;
+            top: 30px;
+            background: #fff0f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background-color: #ff4d4f;
+            width: 8px;
+            height: 8px;
+            transition: all 1.5s ease-in-out;
+        }
+        .particle.aggregated {
+            background-color: #52c41a;
+            width: 24px;
+            height: 24px;
+            transition: all 2s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Optimización en Spark: El Cuello de Botella de la Red</h2>
+    <div class="controls">
+        <button id="btn-unoptimized" onclick="runUnoptimized()">1. Sin Optimizar (Shuffle Masivo)</button>
+        <button id="btn-optimized" onclick="runOptimized()">2. Optimizado (Agregación Local)</button>
+        <button onclick="reset()">Reiniciar</button>
+    </div>
+
+    <div id="cluster">
+        <div class="node worker" id="w1">Executor 1<br><small>Partición 1</small></div>
+        <div class="node worker" id="w2">Executor 2<br><small>Partición 2</small></div>
+        <div class="node worker" id="w3">Executor 3<br><small>Partición 3</small></div>
+        
+        <div class="node" id="driver">Nodo Central<br>(Combinación)</div>
+    </div>
+
+    <script>
+        const cluster = document.getElementById('cluster');
+        const workers = [
+            { x: 170, y: 70 },
+            { x: 170, y: 190 },
+            { x: 170, y: 310 }
+        ];
+        const target = { x: 600, y: 190 };
+        let particles = [];
+
+        function createParticle(x, y, isAggregated = false) {
+            const p = document.createElement('div');
+            p.className = 'particle' + (isAggregated ? ' aggregated' : '');
+            p.style.left = x + 'px';
+            p.style.top = y + 'px';
+            cluster.appendChild(p);
+            return p;
+        }
+
+        function runUnoptimized() {
+            reset();
+            document.querySelectorAll('button').forEach(b => b.disabled = true);
+            
+            // Generar muchos registros viajando por la red (Exchange)
+            workers.forEach((w, index) => {
+                for(let i=0; i<30; i++) {
+                    setTimeout(() => {
+                        let startY = w.y + (Math.random() * 40 - 20);
+                        let p = createParticle(w.x, startY);
+                        particles.push(p);
+                        
+                        // Mover al nodo central
+                        setTimeout(() => {
+                            p.style.left = (target.x + Math.random() * 60 - 30) + 'px';
+                            p.style.top = (target.y + Math.random() * 200 - 100) + 'px';
+                        }, 50);
+                    }, index * 200 + i * 50); // Escalonar salidas
+                }
+            });
+
+            setTimeout(() => {
+                document.querySelectorAll('button').forEach(b => b.disabled = false);
+            }, 3000);
+        }
+
+        function runOptimized() {
+            reset();
+            document.querySelectorAll('button').forEach(b => b.disabled = true);
+            
+            // Simular agregación local (partial_sum, partial_count)
+            workers.forEach((w, index) => {
+                setTimeout(() => {
+                    // Aparece un solo registro grande por nodo
+                    let p = createParticle(w.x, w.y, true);
+                    particles.push(p);
+                    
+                    // Viaja de forma limpia
+                    setTimeout(() => {
+                        p.style.left = target.x + 'px';
+                        p.style.top = (target.y + (index - 1) * 40) + 'px';
+                    }, 500);
+                }, index * 400);
+            });
+
+            setTimeout(() => {
+                document.querySelectorAll('button').forEach(b => b.disabled = false);
+            }, 2000);
+        }
+
+        function reset() {
+            particles.forEach(p => p.remove());
+            particles = [];
+        }
+    </script>
+</body>
+</html>

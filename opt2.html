@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark: Orden de Ejecución y Predicate Pushdown</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 15px;
+            margin: 0 5px;
+            cursor: pointer;
+            background-color: #0052cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #003d99; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        #cluster {
+            position: relative;
+            width: 900px;
+            height: 400px;
+            margin: 0 auto;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .node {
+            position: absolute;
+            border: 2px solid #333;
+            border-radius: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        #storage {
+            width: 120px;
+            height: 320px;
+            left: 20px;
+            top: 30px;
+            background: #fffbe6;
+            border-style: dashed;
+        }
+        
+        .executor {
+            width: 120px;
+            height: 80px;
+            left: 380px;
+            background: #e6f7ff;
+        }
+        #exec1 { top: 30px; }
+        #exec2 { top: 150px; }
+        #exec3 { top: 270px; }
+        
+        #output {
+            width: 120px;
+            height: 320px;
+            right: 20px;
+            top: 30px;
+            background: #f6ffed;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            background-color: #1890ff; /* Dato crudo */
+            transition: left 1s linear, top 1s linear, background-color 0.3s, opacity 0.3s;
+            z-index: 10;
+        }
+        .particle.filtered {
+            background-color: #d9d9d9; /* Dato descartado */
+            opacity: 0.3;
+        }
+        .particle.kept {
+            background-color: #52c41a; /* Dato válido */
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Optimización en Spark: Filtrado Temprano (Predicate Pushdown)</h2>
+    <div class="controls">
+        <button id="btn-late" onclick="runLateFilter()">1. Leer -> Procesar -> Filtrar (Ineficiente)</button>
+        <button id="btn-early" onclick="runEarlyFilter()">2. Filtrar en Disco -> Procesar (Catalyst)</button>
+        <button onclick="reset()">Reiniciar</button>
+    </div>
+
+    <div id="cluster">
+        <div class="node" id="storage">Almacenamiento<br><small>(Ej. Parquet)</small></div>
+        
+        <div class="node executor" id="exec1">Executor 1</div>
+        <div class="node executor" id="exec2">Executor 2</div>
+        <div class="node executor" id="exec3">Executor 3</div>
+        
+        <div class="node" id="output">Resultado</div>
+    </div>
+
+    <script>
+        const cluster = document.getElementById('cluster');
+        const storageX = 80;
+        const execX = 400;
+        const outputX = 800;
+        const execYs = [70, 190, 310];
+        let particles = [];
+
+        function createParticle(x, y) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = x + 'px';
+            p.style.top = y + 'px';
+            cluster.appendChild(p);
+            return p;
+        }
+
+        function disableButtons(ms) {
+            document.querySelectorAll('button').forEach(b => b.disabled = true);
+            setTimeout(() => {
+                document.querySelectorAll('button').forEach(b => b.disabled = false);
+            }, ms);
+        }
+
+        // Animación 1: Leer todo, enviarlo por la red, y descartar en memoria
+        function runLateFilter() {
+            reset();
+            disableButtons(3500);
+            
+            let pCount = 0;
+            for(let e = 0; e < 3; e++) { // Para cada executor
+                for(let i = 0; i < 15; i++) { // 15 registros por executor
+                    setTimeout(() => {
+                        let startY = 50 + Math.random() * 280;
+                        let p = createParticle(storageX, startY);
+                        particles.push(p);
+                        
+                        // 1. Viajan todos los datos por la red (I/O alto)
+                        setTimeout(() => {
+                            p.style.left = execX + 'px';
+                            p.style.top = execYs[e] + 'px';
+                            
+                            // 2. Se procesan y se filtran tarde (en memoria)
+                            setTimeout(() => {
+                                // 80% de los datos no servían (se descartan)
+                                const isKept = Math.random() > 0.8;
+                                if(isKept) {
+                                    p.classList.add('kept');
+                                    // 3. Solo los útiles pasan al resultado
+                                    setTimeout(() => {
+                                        p.style.left = outputX + 'px';
+                                        p.style.top = (100 + Math.random() * 180) + 'px';
+                                    }, 800);
+                                } else {
+                                    p.classList.add('filtered');
+                                }
+                            }, 1000);
+                        }, 100);
+                        
+                    }, pCount * 40);
+                    pCount++;
+                }
+            }
+        }
+
+        // Animación 2: El optimizador baja el filtro hasta el almacenamiento
+        function runEarlyFilter() {
+            reset();
+            disableButtons(3500);
+            
+            let pCount = 0;
+            for(let e = 0; e < 3; e++) {
+                for(let i = 0; i < 15; i++) {
+                    setTimeout(() => {
+                        let startY = 50 + Math.random() * 280;
+                        let p = createParticle(storageX, startY);
+                        particles.push(p);
+                        
+                        // 1. EL FILTRO OCURRE EN EL ORIGEN (Predicate Pushdown)
+                        setTimeout(() => {
+                            const isKept = Math.random() > 0.8;
+                            if(!isKept) {
+                                p.classList.add('filtered'); // Se descarta sin salir del disco
+                            } else {
+                                p.classList.add('kept');
+                                // 2. Solo la fracción útil viaja por la red
+                                setTimeout(() => {
+                                    p.style.left = execX + 'px';
+                                    p.style.top = execYs[e] + 'px';
+                                    
+                                    // 3. Pasa al resultado
+                                    setTimeout(() => {
+                                        p.style.left = outputX + 'px';
+                                        p.style.top = (100 + Math.random() * 180) + 'px';
+                                    }, 800);
+                                }, 500);
+                            }
+                        }, 300);
+                        
+                    }, pCount * 40);
+                    pCount++;
+                }
+            }
+        }
+
+        function reset() {
+            particles.forEach(p => p.remove());
+            particles = [];
+        }
+    </script>
+</body>
+</html>
